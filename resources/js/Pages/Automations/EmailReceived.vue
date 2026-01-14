@@ -30,6 +30,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  executions: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const actions = [

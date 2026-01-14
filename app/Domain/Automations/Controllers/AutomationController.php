@@ -86,6 +86,24 @@ final class AutomationController extends Controller
             ? $emailReceivedEvent->triggerTypes()->get(['id', 'key', 'title', 'description', 'icon', 'placeholder', 'uses_ai'])
             : [];
 
+        $executions = \Illuminate\Support\Facades\DB::table('automation_executions')
+            ->where('automation_id', $automation->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(function ($execution) {
+                return [
+                    'id' => $execution->id,
+                    'email_subject' => $execution->email_subject,
+                    'email_from' => $execution->email_from,
+                    'status' => $execution->status,
+                    'reasoning' => $execution->reasoning,
+                    'confidence' => $execution->confidence,
+                    'action_result' => $execution->action_result ? json_decode($execution->action_result, true) : null,
+                    'created_at' => $execution->created_at,
+                ];
+            });
+
         return Inertia::render('Automations/EmailReceived', [
             'connectedEmail' => data_get($gmail?->metadata, 'email'),
             'hasGmail' => $gmail?->status === 'connected',
@@ -98,6 +116,7 @@ final class AutomationController extends Controller
                 'status' => $automation->status,
             ],
             'triggerTypes' => $triggerTypes,
+            'executions' => $executions,
         ]);
     }
 

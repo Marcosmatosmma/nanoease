@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\User;
-use EchoLabs\Prism\Prism;
+use Prism\Prism\Prism;
 use Carbon\CarbonImmutable;
 use Knuckles\Scribe\Scribe;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\Sanctum;
-use EchoLabs\Prism\Enums\Provider;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Text\PendingRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\URL;
@@ -139,23 +140,17 @@ final class AppServiceProvider extends ServiceProvider
     {
         PrismServer::register(
             'Larasonic Small',
-            fn (): PendingRequest => Prism::text()->using(Provider::Gemini, 'gemini-2.0-flash-lite')
-                ->withSystemPrompt(view('prompts.system')->render())
-                ->withMaxTokens(100)
+            fn (): PendingRequest => Prism::text()->using(Provider::OpenAI, 'gpt-4o-mini')
         );
 
         PrismServer::register(
             'Larasonic Medium',
-            fn (): PendingRequest => Prism::text()->using(Provider::Gemini, 'gemini-2.0-flash-lite')
-                ->withSystemPrompt(view('prompts.system')->render())
-                ->withMaxTokens(150)
+            fn (): PendingRequest => Prism::text()->using(Provider::OpenAI, 'gpt-4o-mini')
         );
 
         PrismServer::register(
             'Larasonic Large',
-            fn (): PendingRequest => Prism::text()->using(Provider::Gemini, 'gemini-2.0-flash-lite')
-                ->withSystemPrompt(view('prompts.system')->render())
-                ->withMaxTokens(250)
+            fn (): PendingRequest => Prism::text()->using(Provider::OpenAI, 'gpt-4o')
         );
     }
 

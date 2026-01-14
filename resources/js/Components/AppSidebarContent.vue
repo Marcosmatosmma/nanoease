@@ -28,6 +28,16 @@ const navigationConfig = [
         route: 'dashboard',
       },
       {
+        name: 'Automações',
+        icon: 'lucide:sparkles',
+        route: 'automations.index',
+      },
+      {
+        name: 'Integrações',
+        icon: 'lucide:link-2',
+        route: 'integrations.index',
+      },
+      {
         name: 'Settings',
         icon: 'lucide:settings',
         route: 'profile.show',

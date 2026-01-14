@@ -10,6 +10,9 @@ use App\Http\Controllers\User\OauthController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\User\LoginLinkController;
 
+require app_path('Domain/Automations/Routes/webAutomations.php');
+require app_path('Domain/Integrations/Routes/webIntegrations.php');
+
 Route::get('/', [WelcomeController::class, 'home'])->name('home');
 
 Route::prefix('auth')->group(

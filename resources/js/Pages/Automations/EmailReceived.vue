@@ -11,6 +11,7 @@ import CardTitle from '@/components/ui/card/CardTitle.vue'
 import Textarea from '@/components/ui/textarea/Textarea.vue'
 import Input from '@/components/ui/input/Input.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import GmailLabelSelector from '@/components/GmailLabelSelector.vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 
@@ -78,10 +79,6 @@ const simulationError = ref(null)
 const forwardToInput = ref('')
 const replySubject = ref('Re: {subject}')
 const replyBody = ref('')
-const gmailLabels = ref([])
-const loadingLabels = ref(false)
-const showNewLabelInput = ref(false)
-const newLabelName = ref('')
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 const xsrfToken = document.cookie
   .split('; ')
@@ -109,30 +106,6 @@ if (props.automation) {
 }
 
 syncActionConfig()
-
-// Buscar labels do Gmail quando componente monta
-const fetchGmailLabels = async () => {
-  if (!props.hasGmail) return
-  
-  loadingLabels.value = true
-  try {
-    const response = await fetch(route('gmail.labels'))
-    const data = await response.json()
-    
-    if (data.success) {
-      gmailLabels.value = data.labels
-    }
-  } catch (error) {
-    console.error('Erro ao buscar labels:', error)
-  } finally {
-    loadingLabels.value = false
-  }
-}
-
-// Buscar labels ao montar
-if (props.hasGmail) {
-  fetchGmailLabels()
-}
 
 watch(
   () => form.action_type,
@@ -490,20 +463,12 @@ function deleteAutomation() {
             <div v-if="form.action_type === 'organizar'" class="space-y-2">
               <CardTitle class="text-base">5) Nome da label no Gmail</CardTitle>
               <CardDescription>
-                Digite o nome da label/pasta que será criada no Gmail. Use "/" para criar hierarquia.
+                Selecione uma label existente ou crie uma nova. Use "/" para criar hierarquia.
               </CardDescription>
-              <Input
+              <GmailLabelSelector 
                 v-model="form.gmail_label"
-                type="text"
-                placeholder="ex.: Financeiro/Boletos"
                 :disabled="!hasGmail"
               />
-              <p class="text-xs text-muted-foreground">
-                💡 Exemplos: "Cobranças", "Financeiro/Notas Fiscais", "Vendas/Pedidos"
-              </p>
-              <p class="text-xs text-muted-foreground">
-                O sistema criará automaticamente esta label no Gmail se ela não existir.
-              </p>
             </div>
 
             <div v-if="form.action_type === 'responder'" class="space-y-4">

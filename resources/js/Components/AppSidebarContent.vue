@@ -33,6 +33,11 @@ const navigationConfig = [
         route: 'automations.index',
       },
       {
+        name: 'E-mails Organizados',
+        icon: 'lucide:inbox',
+        route: 'emails.organized',
+      },
+      {
         name: 'Integrações',
         icon: 'lucide:link-2',
         route: 'integrations.index',

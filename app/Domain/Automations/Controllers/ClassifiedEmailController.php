@@ -21,6 +21,7 @@ final class ClassifiedEmailController
         abort_unless($user, 401);
 
         $automationId = $request->integer('automation_id');
+        $viewMode = $request->get('view', 'kanban'); // 'kanban' ou 'list'
 
         $query = ClassifiedEmail::query()
             ->where('user_id', $user->id)
@@ -31,7 +32,16 @@ final class ClassifiedEmailController
             $query->where('automation_id', $automationId);
         }
 
-        $emails = $query->paginate(20);
+        // Para kanban, pegar todos (limit 200 para performance)
+        // Para lista, manter paginação
+        if ($viewMode === 'kanban') {
+            $emails = [
+                'data' => $query->limit(200)->get(),
+                'total' => $query->count(),
+            ];
+        } else {
+            $emails = $query->paginate(20);
+        }
 
         $automations = \App\Domain\Automations\Models\Automation::query()
             ->where('user_id', $user->id)
@@ -39,7 +49,7 @@ final class ClassifiedEmailController
             ->orderBy('created_at', 'desc')
             ->get(['id', 'rule_text', 'gmail_label', 'status']);
 
-        return Inertia::render('OrganizedEmails/Index', [
+        return Inertia::render('OrganizedEmails/Kanban', [
             'emails' => $emails,
             'automations' => $automations,
             'selectedAutomationId' => $automationId ?: null,

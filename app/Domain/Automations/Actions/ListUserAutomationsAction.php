@@ -13,9 +13,12 @@ final class ListUserAutomationsAction
     public function handle(User $user): Collection
     {
         return Automation::query()
-            ->with(['actions' => function ($query) {
-                $query->orderBy('position');
-            }])
+            ->with([
+                'actions' => function ($query) {
+                    $query->orderBy('position');
+                },
+                'event',
+            ])
             ->where('user_id', $user->id)
             ->orderByDesc('updated_at')
             ->get();

@@ -76,10 +76,13 @@ final class GmailEmailSender
         $isHtml = strip_tags($body) !== $body;
         $contentType = $isHtml ? 'text/html; charset=UTF-8' : 'text/plain; charset=UTF-8';
         
+        // Encode subject para MIME encoded-word se tiver caracteres especiais
+        $encodedSubject = $this->encodeSubject($subject);
+        
         $headers = [
             'From: '.$from,
             'To: '.implode(', ', $recipients),
-            'Subject: '.$subject,
+            'Subject: '.$encodedSubject,
             'Reply-To: '.$from,
             'MIME-Version: 1.0',
             'Content-Type: '.$contentType,
@@ -88,6 +91,20 @@ final class GmailEmailSender
         $raw = implode("\r\n", $headers)."\r\n\r\n".$body;
 
         return rtrim(strtr(base64_encode($raw), '+/', '-_'), '=');
+    }
+
+    /**
+     * Encode subject para MIME encoded-word (RFC 2047)
+     */
+    private function encodeSubject(string $subject): string
+    {
+        // Se não tem caracteres especiais, retorna direto
+        if (mb_check_encoding($subject, 'ASCII')) {
+            return $subject;
+        }
+
+        // Encode para base64 (mais seguro que quoted-printable para UTF-8)
+        return '=?UTF-8?B?' . base64_encode($subject) . '?=';
     }
 
     private function resolveAccessToken(Integration $integration): ?string

@@ -41,4 +41,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         Route::get('/emails/organized/export', [ClassifiedEmailController::class, 'export'])
             ->name('emails.organized.export');
+
+        Route::get('/gmail/labels', [ClassifiedEmailController::class, 'listGmailLabels'])
+            ->name('gmail.labels');
     });

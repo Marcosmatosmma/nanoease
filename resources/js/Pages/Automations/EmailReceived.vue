@@ -78,6 +78,10 @@ const simulationError = ref(null)
 const forwardToInput = ref('')
 const replySubject = ref('Re: {subject}')
 const replyBody = ref('')
+const gmailLabels = ref([])
+const loadingLabels = ref(false)
+const showNewLabelInput = ref(false)
+const newLabelName = ref('')
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 const xsrfToken = document.cookie
   .split('; ')
@@ -105,6 +109,30 @@ if (props.automation) {
 }
 
 syncActionConfig()
+
+// Buscar labels do Gmail quando componente monta
+const fetchGmailLabels = async () => {
+  if (!props.hasGmail) return
+  
+  loadingLabels.value = true
+  try {
+    const response = await fetch(route('gmail.labels'))
+    const data = await response.json()
+    
+    if (data.success) {
+      gmailLabels.value = data.labels
+    }
+  } catch (error) {
+    console.error('Erro ao buscar labels:', error)
+  } finally {
+    loadingLabels.value = false
+  }
+}
+
+// Buscar labels ao montar
+if (props.hasGmail) {
+  fetchGmailLabels()
+}
 
 watch(
   () => form.action_type,

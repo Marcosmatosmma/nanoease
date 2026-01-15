@@ -132,6 +132,7 @@ final class AutomationController extends Controller
                 'rule' => $automation->rule_text,
                 'action_type' => $action?->type,
                 'action_config' => $action?->config ?? [],
+                'gmail_label' => $automation->gmail_label,
                 'status' => $automation->status,
             ],
             'triggerTypes' => $triggerTypes,

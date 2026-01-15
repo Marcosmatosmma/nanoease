@@ -51,7 +51,19 @@ const selectLabel = (labelName) => {
 
 const createNew = () => {
   if (searchQuery.value.trim()) {
-    emit('update:modelValue', searchQuery.value.trim())
+    const newLabelName = searchQuery.value.trim()
+    
+    // Adicionar à lista local se não existir
+    const exists = labels.value.find(l => l.name === newLabelName)
+    if (!exists) {
+      labels.value.push({
+        id: `local-${Date.now()}`,
+        name: newLabelName,
+        color: null,
+      })
+    }
+    
+    emit('update:modelValue', newLabelName)
     open.value = false
     searchQuery.value = ''
   }

@@ -27,23 +27,6 @@ const loading = ref(false)
 const open = ref(false)
 const searchQuery = ref('')
 
-const labelsBySource = computed(() => {
-  const groups = {
-    database: [],
-    suggested: [],
-    gmail: [],
-  }
-  
-  labels.value.forEach(label => {
-    const source = label.source || 'gmail'
-    if (groups[source]) {
-      groups[source].push(label)
-    }
-  })
-  
-  return groups
-})
-
 const filteredLabels = computed(() => {
   if (!searchQuery.value) return labels.value
   
@@ -51,12 +34,6 @@ const filteredLabels = computed(() => {
   return labels.value.filter(label => 
     label.name.toLowerCase().includes(query)
   )
-})
-
-const hasResults = computed(() => {
-  return filteredBySource.value.database.length > 0 ||
-         filteredBySource.value.suggested.length > 0 ||
-         filteredBySource.value.gmail.length > 0
 })
 
 const filteredBySource = computed(() => {
@@ -74,6 +51,12 @@ const filteredBySource = computed(() => {
   })
   
   return groups
+})
+
+const hasResults = computed(() => {
+  return filteredBySource.value.database.length > 0 ||
+         filteredBySource.value.suggested.length > 0 ||
+         filteredBySource.value.gmail.length > 0
 })
 
 const fetchLabels = async () => {

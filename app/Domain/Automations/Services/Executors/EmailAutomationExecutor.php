@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Automations\Services\Executors;
 
 use App\Domain\AI\Services\Automations\ActionDecisionEngine;
+use App\Domain\AI\Services\EmailDataExtractorService;
 use App\Domain\Automations\Models\Automation;
 use App\Domain\Automations\Models\ClassifiedEmail;
 use App\Domain\Automations\Services\EmailResponseComposer;
@@ -19,6 +20,7 @@ final class EmailAutomationExecutor
         private readonly EmailSenderManager $emailSender,
         private readonly EmailResponseComposer $responseComposer,
         private readonly GmailLabelManager $gmailLabelManager,
+        private readonly EmailDataExtractorService $dataExtractor,
     ) {}
 
     /**
@@ -196,6 +198,9 @@ final class EmailAutomationExecutor
 
         // Salvar metadados no banco de dados
         try {
+            // Extrair dados estruturados com IA (em background para não travar)
+            $extractedData = $this->extractDataWithAI($event);
+            
             ClassifiedEmail::create([
                 'user_id' => $automation->user_id,
                 'automation_id' => $automation->id,
@@ -206,9 +211,9 @@ final class EmailAutomationExecutor
                 'email_subject' => $event['subject'] ?? null,
                 'email_date' => isset($event['date']) ? Carbon::parse($event['date']) : now(),
                 'gmail_label' => $gmailLabel,
-                'metadata' => [
+                'metadata' => array_merge([
                     'snippet' => $event['snippet'] ?? null,
-                ],
+                ], $extractedData),
             ]);
         } catch (\Exception $e) {
             // Log erro mas não falha a execução (label já foi aplicado)
@@ -249,6 +254,33 @@ final class EmailAutomationExecutor
         }
         
         return trim($from);
+    }
+
+    /**
+     * Extrai dados estruturados do e-mail com IA
+     */
+    private function extractDataWithAI(array $event): array
+    {
+        try {
+            $from = $event['from'] ?? '';
+            $subject = $event['subject'] ?? '';
+            $body = $event['body'] ?? $event['snippet'] ?? '';
+
+            // Se não tem conteúdo suficiente, retorna vazio
+            if (empty($subject) && empty($body)) {
+                return [];
+            }
+
+            // Chama extrator de dados
+            return $this->dataExtractor->extract($from, $subject, $body);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao extrair dados com IA', [
+                'error' => $e->getMessage(),
+                'subject' => $event['subject'] ?? null,
+            ]);
+
+            return [];
+        }
     }
 
     private function result(string $status, string $message, array $context = []): array

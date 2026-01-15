@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domain\Automations\Controllers;
 
+use App\Domain\Automations\Actions\ExportClassifiedEmailsAction;
 use App\Domain\Automations\Models\ClassifiedEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ClassifiedEmailController
 {
@@ -41,5 +43,17 @@ final class ClassifiedEmailController
             'automations' => $automations,
             'selectedAutomationId' => $automationId ?: null,
         ]);
+    }
+
+    public function export(
+        Request $request,
+        ExportClassifiedEmailsAction $exportAction
+    ): StreamedResponse {
+        $user = Auth::user();
+        abort_unless($user, 401);
+
+        $automationId = $request->integer('automation_id') ?: null;
+
+        return $exportAction->handle($user->id, $automationId);
     }
 }

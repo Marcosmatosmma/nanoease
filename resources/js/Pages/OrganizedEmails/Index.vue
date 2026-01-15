@@ -56,6 +56,13 @@ const openInGmail = (email) => {
   const url = `https://mail.google.com/mail/u/0/#all/${email.gmail_id}`
   window.open(url, '_blank')
 }
+
+const exportToCsv = () => {
+  const params = props.selectedAutomationId 
+    ? { automation_id: props.selectedAutomationId }
+    : {}
+  window.location.href = route('emails.organized.export', params)
+}
 </script>
 
 <template>
@@ -70,10 +77,20 @@ const openInGmail = (email) => {
               Visualize todos os e-mails organizados pelas suas automações
             </p>
           </div>
-          <Button :as="Link" :href="route('automations.index')" variant="outline">
-            <Icon icon="lucide:settings" class="mr-2 h-4 w-4" />
-            Ver Automações
-          </Button>
+          <div class="flex gap-2">
+            <Button :as="Link" :href="route('automations.index')" variant="outline">
+              <Icon icon="lucide:settings" class="mr-2 h-4 w-4" />
+              Ver Automações
+            </Button>
+            <Button 
+              v-if="emails.total > 0"
+              variant="outline"
+              @click="exportToCsv"
+            >
+              <Icon icon="lucide:download" class="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
+          </div>
         </div>
       </header>
 

@@ -101,14 +101,6 @@ const createNew = () => {
   }
 }
 
-const filteredLabels = computed(() => {
-  if (!searchQuery.value) return labels.value
-  
-  return labels.value.filter(label => 
-    label.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
 onMounted(() => {
   if (!props.disabled) {
     fetchLabels()

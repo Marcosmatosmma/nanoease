@@ -65,8 +65,13 @@ const fetchLabels = async () => {
     const response = await fetch(route('gmail.labels'))
     const data = await response.json()
     
+    console.log('Response from API:', data)
+    
     if (data.success) {
       labels.value = data.labels
+      console.log('Labels loaded:', labels.value.length)
+    } else {
+      console.error('API error:', data.message)
     }
   } catch (error) {
     console.error('Erro ao buscar labels:', error)

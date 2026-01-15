@@ -75,7 +75,7 @@ final class ClassifiedEmailController
 
         $integration = \App\Domain\Integrations\Models\Integration::query()
             ->where('user_id', $user->id)
-            ->where('service', 'gmail')
+            ->where('provider', 'gmail')
             ->where('status', 'connected')
             ->first();
 

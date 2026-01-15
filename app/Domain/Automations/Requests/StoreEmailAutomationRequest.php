@@ -25,7 +25,7 @@ final class StoreEmailAutomationRequest extends FormRequest
             'action_config.forward_to.*' => ['email:rfc,dns'],
             'action_config.reply_subject' => ['required_if:action_type,responder', 'string', 'max:500'],
             'action_config.reply_body' => ['required_if:action_type,responder', 'string', 'min:1'],
-            'gmail_label' => ['required_if:action_type,organizar', 'string', 'max:255'],
+            'gmail_label' => ['nullable', 'required_if:action_type,organizar', 'string', 'max:255'],
             'automation' => ['nullable', 'integer'],
         ];
 

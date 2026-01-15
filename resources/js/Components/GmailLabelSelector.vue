@@ -1,13 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
-import Select from '@/components/ui/select/Select.vue'
-import SelectContent from '@/components/ui/select/SelectContent.vue'
-import SelectItem from '@/components/ui/select/SelectItem.vue'
-import SelectTrigger from '@/components/ui/select/SelectTrigger.vue'
-import SelectValue from '@/components/ui/select/SelectValue.vue'
 import Input from '@/components/ui/input/Input.vue'
 import Button from '@/components/ui/button/Button.vue'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 const props = defineProps({
   modelValue: {
@@ -24,19 +24,8 @@ const emit = defineEmits(['update:modelValue'])
 
 const labels = ref([])
 const loading = ref(false)
-const showNewInput = ref(false)
-const newLabelName = ref('')
-
-const selectedLabel = computed({
-  get: () => props.modelValue,
-  set: (value) => {
-    if (value === '__new__') {
-      showNewInput.value = true
-    } else {
-      emit('update:modelValue', value)
-    }
-  },
-})
+const open = ref(false)
+const searchQuery = ref('')
 
 const fetchLabels = async () => {
   loading.value = true
@@ -54,18 +43,27 @@ const fetchLabels = async () => {
   }
 }
 
+const selectLabel = (labelName) => {
+  emit('update:modelValue', labelName)
+  open.value = false
+  searchQuery.value = ''
+}
+
 const createNew = () => {
-  if (newLabelName.value.trim()) {
-    emit('update:modelValue', newLabelName.value.trim())
-    showNewInput.value = false
-    newLabelName.value = ''
+  if (searchQuery.value.trim()) {
+    emit('update:modelValue', searchQuery.value.trim())
+    open.value = false
+    searchQuery.value = ''
   }
 }
 
-const cancelNew = () => {
-  showNewInput.value = false
-  newLabelName.value = ''
-}
+const filteredLabels = computed(() => {
+  if (!searchQuery.value) return labels.value
+  
+  return labels.value.filter(label => 
+    label.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
 
 onMounted(() => {
   if (!props.disabled) {
@@ -76,51 +74,62 @@ onMounted(() => {
 
 <template>
   <div class="space-y-2">
-    <div v-if="!showNewInput">
-      <Select v-model="selectedLabel" :disabled="disabled || loading">
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione ou crie uma label..." />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem 
-            v-for="label in labels" 
-            :key="label.id" 
-            :value="label.name"
+    <Popover v-model:open="open">
+      <PopoverTrigger as-child>
+        <Button
+          variant="outline"
+          role="combobox"
+          :aria-expanded="open"
+          class="w-full justify-between"
+          :disabled="disabled || loading"
+        >
+          <span v-if="modelValue" class="flex items-center gap-2">
+            <Icon icon="lucide:tag" class="h-3 w-3" />
+            {{ modelValue }}
+          </span>
+          <span v-else class="text-muted-foreground">
+            {{ loading ? 'Carregando labels...' : 'Selecione ou crie uma label...' }}
+          </span>
+          <Icon icon="lucide:chevron-down" class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent class="w-full p-0" align="start">
+        <div class="p-2">
+          <Input
+            v-model="searchQuery"
+            placeholder="Buscar ou criar nova..."
+            class="mb-2"
+            @keyup.enter="createNew"
+          />
+        </div>
+        
+        <div class="max-h-60 overflow-y-auto">
+          <div v-if="filteredLabels.length === 0 && !searchQuery" class="p-4 text-center text-sm text-muted-foreground">
+            Nenhuma label encontrada
+          </div>
+          
+          <button
+            v-for="label in filteredLabels"
+            :key="label.id"
+            class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+            @click="selectLabel(label.name)"
           >
-            <div class="flex items-center gap-2">
-              <Icon icon="lucide:tag" class="h-3 w-3" />
-              {{ label.name }}
-            </div>
-          </SelectItem>
-          <SelectItem value="__new__" class="border-t mt-2 pt-2">
-            <div class="flex items-center gap-2 font-semibold text-primary">
-              <Icon icon="lucide:plus" class="h-3 w-3" />
-              Criar nova label...
-            </div>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      <p v-if="loading" class="text-xs text-muted-foreground">
-        Carregando labels do Gmail...
-      </p>
-    </div>
-
-    <div v-else class="flex gap-2">
-      <Input
-        v-model="newLabelName"
-        type="text"
-        placeholder="ex.: Financeiro/Boletos"
-        @keyup.enter="createNew"
-        @keyup.esc="cancelNew"
-        autofocus
-      />
-      <Button size="sm" variant="default" @click="createNew">
-        <Icon icon="lucide:check" class="h-4 w-4" />
-      </Button>
-      <Button size="sm" variant="outline" @click="cancelNew">
-        <Icon icon="lucide:x" class="h-4 w-4" />
-      </Button>
-    </div>
+            <Icon icon="lucide:tag" class="h-3 w-3" />
+            {{ label.name }}
+          </button>
+          
+          <div v-if="searchQuery && filteredLabels.length === 0" class="border-t">
+            <button
+              class="w-full px-4 py-3 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 font-semibold text-primary"
+              @click="createNew"
+            >
+              <Icon icon="lucide:plus" class="h-4 w-4" />
+              Criar "{{ searchQuery }}"
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
 
     <p class="text-xs text-muted-foreground">
       💡 Use "/" para hierarquia: "Financeiro/Boletos"

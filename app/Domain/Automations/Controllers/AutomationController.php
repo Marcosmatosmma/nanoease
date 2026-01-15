@@ -50,6 +50,25 @@ final class AutomationController extends Controller
         ]);
     }
 
+    public function selectEvent(ListUserIntegrationsAction $listUserIntegrationsAction): Response
+    {
+        $user = Auth::user();
+        $integrations = $listUserIntegrationsAction->handle($user);
+        $gmail = $integrations->get('gmail');
+
+        $events = \App\Domain\Automations\Models\AutomationEvent::query()
+            ->where('active', true)
+            ->orderBy('position')
+            ->orderBy('title')
+            ->get(['id', 'key', 'title', 'description', 'icon', 'category']);
+
+        return Inertia::render('Automations/SelectEvent', [
+            'connectedEmail' => data_get($gmail?->metadata, 'email'),
+            'hasGmail' => $gmail?->status === 'connected',
+            'events' => $events,
+        ]);
+    }
+
     public function emailReceived(ListUserIntegrationsAction $listUserIntegrationsAction): Response
     {
         $user = Auth::user();

@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\User\OauthController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\User\LoginLinkController;
+use App\Domain\AI\Controllers\AIAssistantController;
 
 require app_path('Domain/Automations/Routes/webAutomations.php');
 require app_path('Domain/Integrations/Routes/webIntegrations.php');
@@ -40,4 +41,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::resource('/subscriptions', SubscriptionController::class)
         ->names('subscriptions')
         ->only(['index', 'create', 'store', 'show']);
+
+    // API de IA
+    Route::post('/api/ai/improve-text', [AIAssistantController::class, 'improveText'])
+        ->name('api.ai.improve-text');
 });

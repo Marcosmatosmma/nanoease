@@ -23,6 +23,8 @@ final class StoreEmailAutomationRequest extends FormRequest
             'action_config' => ['nullable', 'array'],
             'action_config.forward_to' => ['required_if:action_type,encaminhar', 'array', 'min:1'],
             'action_config.forward_to.*' => ['email:rfc,dns'],
+            'action_config.reply_subject' => ['required_if:action_type,responder', 'string', 'max:500'],
+            'action_config.reply_body' => ['required_if:action_type,responder', 'string', 'min:1'],
             'automation' => ['nullable', 'integer'],
         ];
 
@@ -51,6 +53,8 @@ final class StoreEmailAutomationRequest extends FormRequest
             'rule.regex' => 'Informe um domínio válido (ex: @empresa.com ou empresa.com)',
             'trigger_type_id.required' => 'Selecione um tipo de condição.',
             'trigger_type_id.exists' => 'Tipo de condição inválido.',
+            'action_config.reply_subject.required_if' => 'Informe o assunto da resposta.',
+            'action_config.reply_body.required_if' => 'Digite o corpo da resposta.',
         ];
     }
 }

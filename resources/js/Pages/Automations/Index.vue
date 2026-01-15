@@ -75,8 +75,8 @@ const nextStatusLabel = (status) => {
               Evento → Interpretação → Ação. Comece pela leitura de e-mails já conectados.
             </p>
           </div>
-          <Button :as="Link" :href="route('automations.email-received')" :disabled="!hasGmail">
-            {{ hasGmail ? 'Criar automação' : 'Conecte o Gmail' }}
+          <Button :as="Link" :href="route('automations.new')" :disabled="!hasGmail">
+            {{ hasGmail ? 'Nova automação' : 'Conecte o Gmail' }}
           </Button>
         </div>
       </header>

@@ -6,7 +6,6 @@ namespace App\Domain\Automations\Services\Executors;
 
 use App\Domain\AI\Services\Automations\ActionDecisionEngine;
 use App\Domain\Automations\Models\Automation;
-use App\Domain\Automations\Services\EmailResponseComposer;
 use App\Domain\Integrations\Services\EmailSenderManager;
 
 final class EmailAutomationExecutor
@@ -14,7 +13,6 @@ final class EmailAutomationExecutor
     public function __construct(
         private readonly ActionDecisionEngine $decisionEngine,
         private readonly EmailSenderManager $emailSender,
-        private readonly EmailResponseComposer $responseComposer,
     ) {}
 
     /**
@@ -105,39 +103,27 @@ final class EmailAutomationExecutor
         );
     }
 
-    /**
-     * Executa ação de resposta automática
-     * Substitui variáveis dinâmicas no template e envia resposta
-     */
     private function executeReply(Automation $automation, array $event, array $params): array
     {
-        // Busca config da ação ou usa params da decisão da IA
-        $action = $automation->actions()->orderBy('position')->first();
-        $config = $action?->config ?? [];
-        
-        $replySubjectTemplate = $config['reply_subject'] ?? $params['reply_subject'] ?? 'Re: {subject}';
-        $replyBodyTemplate = $config['reply_body'] ?? $params['reply_body'] ?? '';
-        
-        $replyTo = $this->extractEmail($event['from'] ?? '');
+        $replyText = $params['reply_text'] ?? '';
+        $replyTo = $event['from'] ?? null;
 
         if (!$replyTo) {
             return $this->result('error', 'Não foi possível identificar o remetente para responder.', []);
         }
 
-        if (empty(trim(strip_tags($replyBodyTemplate)))) {
+        if (empty($replyText)) {
             return $this->result('error', 'Texto de resposta não especificado.', []);
         }
 
-        // Substitui variáveis dinâmicas
-        $replySubject = $this->responseComposer->compose($replySubjectTemplate, $event);
-        $replyBody = $this->responseComposer->compose($replyBodyTemplate, $event);
+        $subject = $event['subject'] ?? 'Sem assunto';
         
         $sendResult = $this->emailSender->send(
             $automation,
             $automation->integration?->metadata['email'] ?? config('mail.from.address'),
             [$replyTo],
-            $replySubject,
-            $replyBody
+            "Re: {$subject}",
+            $replyText
         );
 
         return $this->result(
@@ -145,7 +131,7 @@ final class EmailAutomationExecutor
             $sendResult['message'] ?? 'Falha ao responder.',
             [
                 'reply_to' => $replyTo,
-                'subject' => $replySubject,
+                'subject' => $subject,
                 'provider' => $sendResult['provider'] ?? null,
             ]
         );
@@ -167,18 +153,6 @@ final class EmailAutomationExecutor
             'task_description' => $params['description'] ?? '',
             'event' => $event,
         ]);
-    }
-
-    /**
-     * Extrai e-mail do campo From
-     */
-    private function extractEmail(string $from): string
-    {
-        if (preg_match('/<(.+?)>/', $from, $matches)) {
-            return $matches[1];
-        }
-        
-        return trim($from);
     }
 
     private function result(string $status, string $message, array $context = []): array

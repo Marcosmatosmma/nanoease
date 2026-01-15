@@ -9,9 +9,10 @@ import CardDescription from '@/components/ui/card/CardDescription.vue'
 import CardHeader from '@/components/ui/card/CardHeader.vue'
 import CardTitle from '@/components/ui/card/CardTitle.vue'
 import Textarea from '@/components/ui/textarea/Textarea.vue'
+import Input from '@/components/ui/input/Input.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
-import Input from '@/components/ui/input/Input.vue'
 
 const props = defineProps({
   connectedEmail: {
@@ -74,6 +75,8 @@ const simulation = ref(null)
 const simulating = ref(false)
 const simulationError = ref(null)
 const forwardToInput = ref('')
+const replySubject = ref('Re: {subject}')
+const replyBody = ref('')
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 const xsrfToken = document.cookie
   .split('; ')
@@ -88,8 +91,14 @@ if (props.automation) {
   form.rule = props.automation.rule_text || props.automation.rule || form.rule
   form.action_type = props.automation.action_type || form.action_type
   form.action_config = props.automation.action_config || {}
+  
   if (props.automation.action_type === 'encaminhar') {
     forwardToInput.value = (props.automation.action_config?.forward_to ?? []).join(', ')
+  }
+  
+  if (props.automation.action_type === 'responder') {
+    replySubject.value = props.automation.action_config?.reply_subject || 'Re: {subject}'
+    replyBody.value = props.automation.action_config?.reply_body || ''
   }
 }
 
@@ -100,6 +109,10 @@ watch(
   (type) => {
     if (type !== 'encaminhar') {
       forwardToInput.value = ''
+    }
+    if (type !== 'responder') {
+      replySubject.value = 'Re: {subject}'
+      replyBody.value = ''
     }
     syncActionConfig()
   },
@@ -124,11 +137,13 @@ function translateError(message) {
   if (message.includes('must be at least')) return 'A regra precisa ter pelo menos 6 caracteres.'
   if (message.toLowerCase().includes('csrf')) return 'Sessão expirada. Recarregue a página e tente novamente.'
   if (message.toLowerCase().includes('forward to')) return 'Informe pelo menos um e-mail para encaminhar.'
+  if (message.toLowerCase().includes('reply_body')) return 'Digite o corpo da resposta.'
   if (message.toLowerCase().includes('email')) return 'Informe e-mails válidos separados por vírgula.'
   return message
 }
 
 const forwardToError = computed(() => form.errors['action_config.forward_to'] || form.errors['action_config.forward_to.0'])
+const replyBodyError = computed(() => form.errors['action_config.reply_body'])
 
 const selectedTrigger = computed(() => props.triggerTypes.find((t) => t.id === form.trigger_type_id))
 
@@ -173,6 +188,14 @@ function syncActionConfig() {
       .filter(Boolean)
 
     form.action_config = { forward_to: emails }
+    return
+  }
+  
+  if (form.action_type === 'responder') {
+    form.action_config = {
+      reply_subject: replySubject.value,
+      reply_body: replyBody.value,
+    }
     return
   }
 
@@ -430,6 +453,44 @@ function deleteAutomation() {
                 {{ translateError(forwardToError) }}
               </p>
             </div>
+
+            <div v-if="form.action_type === 'responder'" class="space-y-4">
+              <div class="space-y-2">
+                <CardTitle class="text-base">5) Configure a resposta automática</CardTitle>
+                <CardDescription>
+                  Defina o assunto e corpo da resposta. Use variáveis como {from_name}, {subject}, etc.
+                </CardDescription>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Assunto da resposta</label>
+                <Input
+                  v-model="replySubject"
+                  type="text"
+                  placeholder="Re: {subject}"
+                  @blur="syncActionConfig"
+                />
+                <p class="text-xs text-muted-foreground">
+                  💡 Use {subject} para referenciar o assunto original
+                </p>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Corpo da resposta</label>
+                <RichTextEditor
+                  v-model="replyBody"
+                  placeholder="Digite sua resposta... Use o botão IA para melhorar o texto!"
+                  :disabled="!hasGmail"
+                  @update:model-value="syncActionConfig"
+                />
+                <p v-if="replyBodyError" class="text-sm text-destructive">
+                  {{ translateError(replyBodyError) }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  💡 Use variáveis: {from_name}, {from_email}, {subject}, {date}, {body_preview}
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -526,6 +587,66 @@ function deleteAutomation() {
           </CardContent>
         </Card>
       </div>
+
+      <Card v-if="isEditing && props.executions.length > 0">
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <div>
+              <CardTitle>Histórico de execuções</CardTitle>
+              <CardDescription>Últimas 50 execuções desta automação</CardDescription>
+            </div>
+            <Badge variant="outline" class="flex items-center gap-1">
+              <Icon icon="lucide:history" class="h-4 w-4" />
+              {{ props.executions.length }}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div class="space-y-2">
+            <div
+              v-for="execution in props.executions"
+              :key="execution.id"
+              class="flex items-start gap-3 rounded-lg border p-3 transition hover:bg-muted/50"
+            >
+              <Badge
+                :variant="execution.status === 'success' ? 'success' : execution.status === 'failed' ? 'destructive' : execution.status === 'processing' ? 'default' : 'outline'"
+                class="mt-1 shrink-0"
+              >
+                <Icon
+                  :icon="execution.status === 'success' ? 'lucide:check-circle' : execution.status === 'failed' ? 'lucide:x-circle' : execution.status === 'processing' ? 'lucide:loader-2' : 'lucide:minus-circle'"
+                  :class="{ 'animate-spin': execution.status === 'processing' }"
+                  class="h-3 w-3"
+                />
+                {{ execution.status }}
+              </Badge>
+              
+              <div class="flex-1 space-y-1">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1 space-y-0.5">
+                    <p class="font-medium text-sm">{{ execution.email_subject || '(sem assunto)' }}</p>
+                    <p class="text-xs text-muted-foreground">De: {{ execution.email_from }}</p>
+                  </div>
+                  <span class="text-xs text-muted-foreground shrink-0">
+                    {{ new Date(execution.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
+                  </span>
+                </div>
+                
+                <div v-if="execution.reasoning" class="rounded-md bg-muted/50 p-2 text-xs">
+                  <p class="text-muted-foreground">{{ execution.reasoning }}</p>
+                  <div v-if="execution.confidence !== null" class="mt-1 flex items-center gap-1.5">
+                    <Icon icon="lucide:gauge" class="h-3 w-3" />
+                    <span class="font-medium">{{ Math.round(execution.confidence * 100) }}%</span>
+                  </div>
+                </div>
+
+                <div v-if="execution.action_result && execution.action_result.message" class="rounded-md bg-muted/50 p-2 text-xs">
+                  <p class="text-muted-foreground">{{ execution.action_result.message }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   </AppLayout>
 </template>

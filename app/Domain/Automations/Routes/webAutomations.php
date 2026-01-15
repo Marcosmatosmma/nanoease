@@ -11,6 +11,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/automations', [AutomationController::class, 'index'])
             ->name('automations.index');
 
+        Route::get('/automations/new', [AutomationController::class, 'selectEvent'])
+            ->name('automations.new');
+
         Route::get('/api/automation-trigger-types/{eventKey}', [AutomationTriggerTypeController::class, 'index'])
             ->name('api.automation-trigger-types.index');
 

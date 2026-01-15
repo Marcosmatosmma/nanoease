@@ -111,12 +111,17 @@ final class WatchEmailAutomations extends Command
                         'from' => $msg['from'] ?? '',
                         'subject' => $msg['subject'] ?? '',
                         'body' => $msg['body'] ?? '',
+                        'snippet' => $msg['snippet'] ?? '',
+                        'gmail_id' => $msg['gmail_id'] ?? $msg['id'] ?? '',
+                        'message_id' => $msg['message_id'] ?? '',
+                        'date' => $msg['date'] ?? now()->toIso8601String(),
                     ];
                     
                     // DEBUG: Mostrar o que foi recebido
                     $this->line("   📧 From: " . substr($event['from'], 0, 50));
                     $this->line("   📧 Subject: " . substr($event['subject'], 0, 50));
-                    $this->line("   📧 Body: " . substr($event['body'], 0, 100) . "...");
+                    $bodyPreview = strip_tags($event['body']);
+                    $this->line("   📧 Body (texto): " . substr($bodyPreview, 0, 100) . "...");
                     
                     $availableActions = $automation->actions->map(fn($a) => [
                         'type' => $a->type,
@@ -128,12 +133,20 @@ final class WatchEmailAutomations extends Command
                     if ($usesAI) {
                         $planRule = $automation->plan_rule_text ?: $automation->rule_text;
                         $this->line("   🤖 Usando IA para decidir...");
+                        $this->line("   🤖 Regra: " . $planRule);
+                        
+                        // Mostra o que a IA vai analisar (versão limpa)
+                        $cleanBody = strip_tags($event['body']);
+                        $cleanBody = preg_replace('/\s+/', ' ', $cleanBody);
+                        $this->line("   🤖 Body limpo: " . substr($cleanBody, 0, 200) . "...");
+                        
                         $decision = $decisionEngine->decide($planRule, $event, $availableActions);
                         $shouldExecute = $decision['should_execute'];
                         $confidence = $decision['confidence'];
                         $reasoning = $decision['reasoning'];
                         $this->line("   🤖 Decisão: " . ($shouldExecute ? 'EXECUTAR ✅' : 'PULAR ❌'));
-                        $this->line("   🤖 Reasoning: " . substr($reasoning, 0, 80));
+                        $this->line("   🤖 Confidence: " . round($confidence * 100) . "%");
+                        $this->line("   🤖 Reasoning: " . $reasoning);
                     } else {
                         $shouldExecute = $this->matchDirect($automation, $event);
                         $confidence = $shouldExecute ? 1.0 : 0.0;

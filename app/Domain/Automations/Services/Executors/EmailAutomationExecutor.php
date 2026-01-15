@@ -6,9 +6,11 @@ namespace App\Domain\Automations\Services\Executors;
 
 use App\Domain\AI\Services\Automations\ActionDecisionEngine;
 use App\Domain\Automations\Models\Automation;
+use App\Domain\Automations\Models\ClassifiedEmail;
 use App\Domain\Automations\Services\EmailResponseComposer;
 use App\Domain\Integrations\Services\EmailSenderManager;
 use App\Domain\Integrations\Services\GmailLabelManager;
+use Carbon\Carbon;
 
 final class EmailAutomationExecutor
 {
@@ -172,8 +174,6 @@ final class EmailAutomationExecutor
             return $this->result('error', 'Gmail label não configurado nesta automação.', []);
         }
 
-        // Buscar Gmail message ID a partir do Message-ID header
-        // Nota: $event['id'] deve conter o Gmail message ID (não o Message-ID header)
         $gmailMessageId = $event['gmail_id'] ?? $event['id'] ?? null;
         
         if (!$gmailMessageId) {
@@ -187,8 +187,40 @@ final class EmailAutomationExecutor
             $gmailLabel
         );
 
+        if (!$result['success']) {
+            return $this->result('error', $result['message'], [
+                'gmail_label' => $gmailLabel,
+                'gmail_message_id' => $gmailMessageId,
+            ]);
+        }
+
+        // Salvar metadados no banco de dados
+        try {
+            ClassifiedEmail::create([
+                'user_id' => $automation->user_id,
+                'automation_id' => $automation->id,
+                'integration_id' => $automation->integration_id,
+                'gmail_id' => $gmailMessageId,
+                'email_message_id' => $event['message_id'] ?? null,
+                'email_from' => $event['from'] ?? null,
+                'email_subject' => $event['subject'] ?? null,
+                'email_date' => isset($event['date']) ? Carbon::parse($event['date']) : now(),
+                'gmail_label' => $gmailLabel,
+                'metadata' => [
+                    'snippet' => $event['snippet'] ?? null,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            // Log erro mas não falha a execução (label já foi aplicado)
+            \Log::error('Erro ao salvar classified_email', [
+                'error' => $e->getMessage(),
+                'automation_id' => $automation->id,
+                'gmail_id' => $gmailMessageId,
+            ]);
+        }
+
         return $this->result(
-            $result['success'] ? 'executed' : 'error',
+            'executed',
             $result['message'],
             [
                 'gmail_label' => $gmailLabel,

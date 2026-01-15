@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Automations\Controllers\AutomationController;
 use App\Domain\Automations\Controllers\AutomationTriggerTypeController;
+use App\Domain\Automations\Controllers\ClassifiedEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
@@ -34,4 +35,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         Route::delete('/automations/{automation}', [AutomationController::class, 'destroy'])
             ->name('automations.destroy');
+
+        Route::get('/emails/organized', [ClassifiedEmailController::class, 'index'])
+            ->name('emails.organized');
     });

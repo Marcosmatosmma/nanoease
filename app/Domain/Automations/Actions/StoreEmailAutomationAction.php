@@ -16,9 +16,9 @@ final class StoreEmailAutomationAction
         private readonly EmailRulePlanner $planner,
     ) {}
 
-    public function handle(User $user, int $triggerTypeId, string $ruleText, string $actionType, array $actionConfig = [], ?int $integrationId = null, ?int $automationId = null): Automation
+    public function handle(User $user, int $triggerTypeId, string $ruleText, string $actionType, array $actionConfig = [], ?int $integrationId = null, ?int $automationId = null, ?string $gmailLabel = null): Automation
     {
-        return DB::transaction(function () use ($user, $triggerTypeId, $ruleText, $actionType, $actionConfig, $integrationId, $automationId) {
+        return DB::transaction(function () use ($user, $triggerTypeId, $ruleText, $actionType, $actionConfig, $integrationId, $automationId, $gmailLabel) {
             $plan = $this->buildPlanSafely($ruleText, $actionType, $actionConfig);
 
             // Buscar o automation_event_id do trigger_type
@@ -37,6 +37,7 @@ final class StoreEmailAutomationAction
                     'trigger_type_id' => $triggerTypeId,
                     'rule_text' => $ruleText,
                     'plan_rule_text' => $plan ?? $automation->plan_rule_text,
+                    'gmail_label' => $gmailLabel,
                 ]);
 
                 $action = $automation->actions()->orderBy('position')->first();
@@ -63,6 +64,7 @@ final class StoreEmailAutomationAction
                 'trigger_type_id' => $triggerTypeId,
                 'rule_text' => $ruleText,
                 'plan_rule_text' => $plan,
+                'gmail_label' => $gmailLabel,
                 'status' => Automation::STATUS_DRAFT,
             ]);
 

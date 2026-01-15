@@ -81,7 +81,8 @@ final class GmailMessageFetcher
         $body = $this->extractBody($response->json('payload'));
 
         return [
-            'id' => $id,
+            'id' => $id,  // Gmail API message ID (para aplicar labels)
+            'gmail_id' => $id,  // Alias mais claro
             'message_id' => $headers->get('Message-ID')['value'] ?? $headers->get('Message-Id')['value'] ?? null,
             'from' => $headers->get('From')['value'] ?? null,
             'subject' => $headers->get('Subject')['value'] ?? null,

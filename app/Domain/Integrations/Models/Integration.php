@@ -28,6 +28,11 @@ final class Integration extends Model
         'revoked_at' => 'datetime',
     ];
 
+    public function getAccessTokenAttribute(): ?string
+    {
+        return $this->metadata['token'] ?? null;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

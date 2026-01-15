@@ -8,6 +8,7 @@ use App\Domain\AI\Services\Automations\ActionDecisionEngine;
 use App\Domain\Automations\Models\Automation;
 use App\Domain\Automations\Services\EmailResponseComposer;
 use App\Domain\Integrations\Services\EmailSenderManager;
+use App\Domain\Integrations\Services\GmailLabelManager;
 
 final class EmailAutomationExecutor
 {
@@ -15,6 +16,7 @@ final class EmailAutomationExecutor
         private readonly ActionDecisionEngine $decisionEngine,
         private readonly EmailSenderManager $emailSender,
         private readonly EmailResponseComposer $responseComposer,
+        private readonly GmailLabelManager $gmailLabelManager,
     ) {}
 
     /**
@@ -59,6 +61,7 @@ final class EmailAutomationExecutor
         $executionResult = match ($actionType) {
             'encaminhar' => $this->executeForward($automation, $event, $actionParams),
             'responder' => $this->executeReply($automation, $event, $actionParams),
+            'organizar' => $this->executeClassify($automation, $event, $actionParams),
             'classificar' => $this->executeClassify($automation, $event, $actionParams),
             'criar_tarefa' => $this->executeCreateTask($automation, $event, $actionParams),
             default => $this->result('error', "Ação '{$actionType}' não implementada.", []),
@@ -151,13 +154,48 @@ final class EmailAutomationExecutor
         );
     }
 
+    /**
+     * Executa ação de organizar/classificar e-mail
+     * Aplica label no Gmail
+     */
     private function executeClassify(Automation $automation, array $event, array $params): array
     {
-        return $this->result('executed', 'Ação de classificação não implementada ainda.', [
-            'category' => $params['category'] ?? null,
-            'tags' => $params['tags'] ?? [],
-            'event' => $event,
-        ]);
+        $automation->loadMissing('integration');
+        
+        if (!$automation->integration) {
+            return $this->result('error', 'Integração não encontrada.', []);
+        }
+
+        $gmailLabel = $automation->gmail_label;
+        
+        if (empty($gmailLabel)) {
+            return $this->result('error', 'Gmail label não configurado nesta automação.', []);
+        }
+
+        // Buscar Gmail message ID a partir do Message-ID header
+        // Nota: $event['id'] deve conter o Gmail message ID (não o Message-ID header)
+        $gmailMessageId = $event['gmail_id'] ?? $event['id'] ?? null;
+        
+        if (!$gmailMessageId) {
+            return $this->result('error', 'ID do e-mail não encontrado.', []);
+        }
+
+        // Aplicar label no Gmail
+        $result = $this->gmailLabelManager->applyLabel(
+            $automation->integration,
+            $gmailMessageId,
+            $gmailLabel
+        );
+
+        return $this->result(
+            $result['success'] ? 'executed' : 'error',
+            $result['message'],
+            [
+                'gmail_label' => $gmailLabel,
+                'gmail_message_id' => $gmailMessageId,
+                'email_subject' => $event['subject'] ?? '',
+            ]
+        );
     }
 
     private function executeCreateTask(Automation $automation, array $event, array $params): array

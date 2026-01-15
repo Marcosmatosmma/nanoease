@@ -26,6 +26,7 @@ final class Automation extends Model
         'trigger_type_id',
         'rule_text',
         'plan_rule_text',
+        'gmail_label',
         'status',
     ];
 

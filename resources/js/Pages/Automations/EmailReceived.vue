@@ -69,6 +69,7 @@ const form = useForm({
   rule: '',
   action_type: 'organizar',
   action_config: {},
+  gmail_label: '',
 })
 
 const simulation = ref(null)
@@ -91,6 +92,7 @@ if (props.automation) {
   form.rule = props.automation.rule_text || props.automation.rule || form.rule
   form.action_type = props.automation.action_type || form.action_type
   form.action_config = props.automation.action_config || {}
+  form.gmail_label = props.automation.gmail_label || ''
   
   if (props.automation.action_type === 'encaminhar') {
     forwardToInput.value = (props.automation.action_config?.forward_to ?? []).join(', ')
@@ -113,6 +115,9 @@ watch(
     if (type !== 'responder') {
       replySubject.value = 'Re: {subject}'
       replyBody.value = ''
+    }
+    if (type !== 'organizar') {
+      form.gmail_label = ''
     }
     syncActionConfig()
   },
@@ -451,6 +456,25 @@ function deleteAutomation() {
               />
               <p v-if="forwardToError" class="text-sm text-destructive">
                 {{ translateError(forwardToError) }}
+              </p>
+            </div>
+
+            <div v-if="form.action_type === 'organizar'" class="space-y-2">
+              <CardTitle class="text-base">5) Nome da label no Gmail</CardTitle>
+              <CardDescription>
+                Digite o nome da label/pasta que será criada no Gmail. Use "/" para criar hierarquia.
+              </CardDescription>
+              <Input
+                v-model="form.gmail_label"
+                type="text"
+                placeholder="ex.: Financeiro/Boletos"
+                :disabled="!hasGmail"
+              />
+              <p class="text-xs text-muted-foreground">
+                💡 Exemplos: "Cobranças", "Financeiro/Notas Fiscais", "Vendas/Pedidos"
+              </p>
+              <p class="text-xs text-muted-foreground">
+                O sistema criará automaticamente esta label no Gmail se ela não existir.
               </p>
             </div>
 

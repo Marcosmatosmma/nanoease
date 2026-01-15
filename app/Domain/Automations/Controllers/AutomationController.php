@@ -196,6 +196,7 @@ final class AutomationController extends Controller
             actionConfig: $request->validated('action_config') ?? [],
             integrationId: $gmail->id,
             automationId: $automationId,
+            gmailLabel: $request->validated('gmail_label'),
         );
 
         return Redirect::route('automations.index')->with(

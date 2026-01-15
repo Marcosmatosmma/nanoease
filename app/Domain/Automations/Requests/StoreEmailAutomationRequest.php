@@ -25,6 +25,7 @@ final class StoreEmailAutomationRequest extends FormRequest
             'action_config.forward_to.*' => ['email:rfc,dns'],
             'action_config.reply_subject' => ['required_if:action_type,responder', 'string', 'max:500'],
             'action_config.reply_body' => ['required_if:action_type,responder', 'string', 'min:1'],
+            'gmail_label' => ['required_if:action_type,organizar', 'string', 'max:255'],
             'automation' => ['nullable', 'integer'],
         ];
 
@@ -55,6 +56,7 @@ final class StoreEmailAutomationRequest extends FormRequest
             'trigger_type_id.exists' => 'Tipo de condição inválido.',
             'action_config.reply_subject.required_if' => 'Informe o assunto da resposta.',
             'action_config.reply_body.required_if' => 'Digite o corpo da resposta.',
+            'gmail_label.required_if' => 'Informe o nome da label no Gmail.',
         ];
     }
 }

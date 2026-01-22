@@ -27,6 +27,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('/automations/email-received/simulate', [AutomationController::class, 'simulateEmailReceived'])
             ->name('automations.email-received.simulate');
 
+        Route::post('/automations/test-with-real-emails', [AutomationController::class, 'testWithRealEmails'])
+            ->name('automations.test-with-real-emails');
+
         Route::post('/automations/email-received/{automation?}', [AutomationController::class, 'storeEmailReceived'])
             ->name('automations.email-received.store');
 

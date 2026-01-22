@@ -168,6 +168,35 @@ final class AutomationController extends Controller
         return response()->json($result);
     }
 
+    public function testWithRealEmails(
+        \Illuminate\Http\Request $request,
+        ListUserIntegrationsAction $listUserIntegrationsAction,
+        \App\Domain\Automations\Actions\TestAutomationWithRealEmailsAction $testAction,
+    ): JsonResponse {
+        $user = Auth::user();
+        abort_unless($user, 401);
+
+        $integrations = $listUserIntegrationsAction->handle($user);
+        $gmail = $integrations->get('gmail');
+
+        if (! $gmail || $gmail->status !== 'connected') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Conecte o Gmail antes de testar.',
+                'examples' => [],
+            ], 422);
+        }
+
+        $result = $testAction->handle(
+            user: $user,
+            integration: $gmail,
+            triggerTypeId: $request->integer('trigger_type_id'),
+            ruleText: $request->string('rule')->toString(),
+        );
+
+        return response()->json($result);
+    }
+
     public function storeEmailReceived(
         StoreEmailAutomationRequest $request,
         ListUserIntegrationsAction $listUserIntegrationsAction,

@@ -76,6 +76,8 @@ const form = useForm({
 const simulation = ref(null)
 const simulating = ref(false)
 const simulationError = ref(null)
+const realEmailExamples = ref(null)
+const testingRealEmails = ref(false)
 const forwardToInput = ref('')
 const replySubject = ref('Re: {subject}')
 const replyBody = ref('')
@@ -287,6 +289,44 @@ async function simulate() {
     simulation.value = null
   } finally {
     simulating.value = false
+  }
+}
+
+async function testWithRealEmails() {
+  if (!props.hasGmail || testingRealEmails.value) return
+  simulationError.value = null
+  realEmailExamples.value = null
+  testingRealEmails.value = true
+  
+  try {
+    const response = await fetch(route('automations.test-with-real-emails'), {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken || '',
+        'X-XSRF-TOKEN': xsrfToken ? decodeURIComponent(xsrfToken) : '',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({
+        _token: csrfToken,
+        trigger_type_id: form.trigger_type_id,
+        rule: form.rule,
+      }),
+      credentials: 'same-origin',
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      simulationError.value = error.message || 'Não foi possível testar.'
+      return
+    }
+
+    realEmailExamples.value = await response.json()
+  } catch (error) {
+    simulationError.value = 'Erro de rede ao testar com e-mails reais.'
+  } finally {
+    testingRealEmails.value = false
   }
 }
 
@@ -590,8 +630,9 @@ function deleteAutomation() {
               </p>
             </div>
             <div class="flex items-center gap-2">
-              <Button variant="secondary" :disabled="!hasGmail || simulating" @click="simulate">
-                {{ simulating ? 'Validando...' : 'Validar' }}
+              <Button variant="secondary" :disabled="!hasGmail || testingRealEmails" @click="testWithRealEmails">
+                <Icon v-if="testingRealEmails" icon="lucide:loader-2" class="mr-2 h-4 w-4 animate-spin" />
+                {{ testingRealEmails ? 'Buscando...' : 'Testar com exemplos reais' }}
               </Button>
               <Button
                 v-if="isEditing"

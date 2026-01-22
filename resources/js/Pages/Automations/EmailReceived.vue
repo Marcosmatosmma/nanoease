@@ -366,8 +366,8 @@ function deleteAutomation() {
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="space-y-2">
-              <CardTitle class="text-base">2) Tipo de condição</CardTitle>
-              <CardDescription>Escolha como o e-mail será identificado.</CardDescription>
+              <CardTitle class="text-base">2) Como identificar esse e-mail?</CardTitle>
+              <CardDescription>Escolha o jeito mais fácil de reconhecer a mensagem.</CardDescription>
               <div class="grid gap-3">
                 <button
                   v-for="trigger in props.triggerTypes"
@@ -387,6 +387,18 @@ function deleteAutomation() {
                   <div class="flex-1 space-y-1">
                     <p class="font-medium">{{ trigger.title }}</p>
                     <p class="text-sm text-muted-foreground">{{ trigger.description }}</p>
+                    <p v-if="trigger.key === 'sender_exact'" class="text-xs text-emerald-700">
+                      Ex: suporte@empresa.com
+                    </p>
+                    <p v-else-if="trigger.key === 'sender_domain'" class="text-xs text-emerald-700">
+                      Ex: @empresa.com (todos os e-mails desse domínio)
+                    </p>
+                    <p v-else-if="trigger.key === 'subject_contains'" class="text-xs text-emerald-700">
+                      Ex: "fatura", "boleto", "nota fiscal"
+                    </p>
+                    <p v-else-if="trigger.key === 'content_semantic'" class="text-xs text-emerald-700">
+                      Ex: "e-mails sobre pagamentos em atraso"
+                    </p>
                   </div>
                 </button>
               </div>

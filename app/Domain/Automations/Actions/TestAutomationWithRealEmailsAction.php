@@ -19,27 +19,27 @@ final class TestAutomationWithRealEmailsAction
 
     public function handle(User $user, Integration $integration, int $triggerTypeId, string $ruleText): array
     {
-        $triggerType = \App\Domain\Automations\Models\TriggerType::find($triggerTypeId);
-        if (! $triggerType) {
-            return [
-                'status' => 'error',
-                'message' => 'Tipo de trigger inválido.',
-                'examples' => [],
-            ];
-        }
+        // Buscar apenas da aba Principal (category:primary) - equivalente à aba "Principal" do Gmail
+        // Isso exclui automaticamente: Promoções, Social e Atualizações
+        $result = $this->gmailFetcher->fetch($integration, 'category:primary', 10);
 
-        $result = $this->gmailFetcher->fetch($integration, '', 10);
+        \Log::info('GmailFetcher result:', $result);
 
         if ($result['status'] !== 'ok' || empty($result['messages'])) {
             return [
                 'status' => 'warning',
-                'message' => 'Não conseguimos buscar e-mails da sua caixa. Verifique a conexão com o Gmail.',
+                'message' => 'Não conseguimos buscar e-mails da sua caixa. Detalhes: ' . ($result['message'] ?? 'Erro desconhecido'),
                 'examples' => [],
+                'debug' => $result,
             ];
         }
 
         $examples = [];
+        $totalAnalyzed = 0;
+        
         foreach ($result['messages'] as $message) {
+            $totalAnalyzed++;
+            
             $event = [
                 'from' => $message['from'] ?? '',
                 'subject' => $message['subject'] ?? '',
@@ -48,25 +48,24 @@ final class TestAutomationWithRealEmailsAction
 
             $interpretation = $this->ruleInterpreter->interpret($ruleText, $event);
 
-            $decision = 'ignore';
-            $variant = 'default';
-            $icon = 'lucide:minus-circle';
-            $confidence = $interpretation['confidence'] ?? null;
+            if (!$interpretation['should_execute']) {
+                continue;
+            }
 
-            if ($interpretation['should_execute']) {
-                if ($confidence !== null && $confidence >= 0.8) {
-                    $decision = 'execute';
-                    $variant = 'success';
-                    $icon = 'lucide:check-circle';
-                } elseif ($confidence !== null && $confidence >= 0.5) {
-                    $decision = 'uncertain';
-                    $variant = 'warning';
-                    $icon = 'lucide:alert-circle';
-                } else {
-                    $decision = 'execute';
-                    $variant = 'success';
-                    $icon = 'lucide:check-circle';
-                }
+            $confidence = $interpretation['confidence'] ?? null;
+            
+            if ($confidence !== null && $confidence >= 0.8) {
+                $decision = 'execute';
+                $variant = 'success';
+                $icon = 'lucide:check-circle';
+            } elseif ($confidence !== null && $confidence >= 0.5) {
+                $decision = 'uncertain';
+                $variant = 'warning';
+                $icon = 'lucide:alert-circle';
+            } else {
+                $decision = 'execute';
+                $variant = 'success';
+                $icon = 'lucide:check-circle';
             }
 
             $examples[] = [
@@ -81,10 +80,17 @@ final class TestAutomationWithRealEmailsAction
             ];
         }
 
+        $matchCount = count($examples);
+        $message = $matchCount > 0
+            ? sprintf('Encontrados %d e-mail(s) correspondente(s) entre os %d mais recentes da sua caixa.', $matchCount, $totalAnalyzed)
+            : sprintf('Nenhum e-mail correspondente encontrado entre os %d mais recentes da sua caixa.', $totalAnalyzed);
+
         return [
             'status' => 'ok',
-            'message' => sprintf('Testado contra %d e-mails recentes da sua caixa.', count($examples)),
+            'message' => $message,
             'examples' => $examples,
+            'total_analyzed' => $totalAnalyzed,
+            'total_matched' => $matchCount,
         ];
     }
 }

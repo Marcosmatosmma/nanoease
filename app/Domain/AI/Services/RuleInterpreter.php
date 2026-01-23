@@ -26,7 +26,8 @@ final class RuleInterpreter
 
         try {
             $raw = $this->client->ask($promptText);
-            $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+            $cleaned = $this->extractJson($raw);
+            $decoded = json_decode($cleaned, true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable $e) {
             return [
                 'should_execute' => false,
@@ -46,6 +47,7 @@ final class RuleInterpreter
         return [
             'should_execute' => $shouldExecute,
             'confidence' => $confidence,
+            'reasoning' => $reason,
             'signals' => array_values(array_filter([
                 $reason ?: null,
                 $matchedSender ? 'matched_sender' : null,
@@ -73,5 +75,20 @@ final class RuleInterpreter
         }
 
         return 0.0;
+    }
+
+    /**
+     * Remove markdown code blocks da resposta da IA se existir
+     */
+    private function extractJson(string $raw): string
+    {
+        $trimmed = trim($raw);
+        
+        // Remove ```json ... ``` ou ``` ... ```
+        if (preg_match('/^```(?:json)?\s*(.*?)\s*```$/s', $trimmed, $matches)) {
+            return trim($matches[1]);
+        }
+        
+        return $trimmed;
     }
 }

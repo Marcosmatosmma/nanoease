@@ -187,11 +187,24 @@ final class AutomationController extends Controller
             ], 422);
         }
 
+        $automationId = $request->integer('automation_id');
+        $ruleText = $request->string('rule')->toString();
+        
+        if ($automationId) {
+            $automation = Automation::where('id', $automationId)
+                ->where('user_id', $user->id)
+                ->first();
+            
+            if ($automation && $automation->plan_rule_text) {
+                $ruleText = $automation->plan_rule_text;
+            }
+        }
+
         $result = $testAction->handle(
             user: $user,
             integration: $gmail,
             triggerTypeId: $request->integer('trigger_type_id'),
-            ruleText: $request->string('rule')->toString(),
+            ruleText: $ruleText,
         );
 
         return response()->json($result);

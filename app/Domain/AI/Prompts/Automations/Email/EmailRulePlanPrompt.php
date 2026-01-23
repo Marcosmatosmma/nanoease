@@ -19,68 +19,55 @@ final class EmailRulePlanPrompt extends BasePrompt
         $actionConfig = $context['action_config'] ?? [];
         $actionConfigJson = json_encode($actionConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
+        // Extrair informações específicas do action_config
+        $gmailLabel = $actionConfig['gmail_label'] ?? null;
+        $forwardTo = $actionConfig['forward_to'] ?? [];
+        $replySubject = $actionConfig['reply_subject'] ?? null;
+        $replyBody = $actionConfig['reply_body'] ?? null;
+
         return <<<PROMPT
-Você é um PLANEJADOR DE AUTOMAÇÕES especializado. Sua missão é transformar regras em linguagem natural em planos de execução PRECISOS e EXECUTÁVEIS.
+Você é um especialista em expandir regras de automação de e-mail. Transforme a regra simples do usuário em uma descrição clara e específica de QUANDO executar a ação.
 
-## CONTEXTO DA AUTOMAÇÃO
+## ENTRADA
 
-**Evento detectado**: {$event}
-**Regra original do usuário**: "{$rule}"
-**Ação a executar**: {$action}
-**Configuração da ação**:
-```json
-{$actionConfigJson}
-```
+**Regra do usuário**: "{$rule}"
+**Ação**: {$action}
+**Configuração**: {$actionConfigJson}
 
 ---
 
 ## SUA TAREFA
 
-Crie um PLANO OPERACIONAL que descreva:
+Expanda APENAS a **CONDIÇÃO** (quando executar). Seja específico sobre:
 
-1. **CONDIÇÃO EXATA** - Quando/em que situação a automação deve ser executada
-2. **CRITÉRIOS ESPECÍFICOS** - Quais características do e-mail devem ser verificadas
-3. **AÇÃO PRECISA** - O que exatamente será feito (com destinatários, configurações, etc)
+1. **O QUE buscar** - Extraia as palavras-chave ou conceito da regra
+2. **ONDE buscar** - Especifique: remetente, assunto, corpo, domínio
+3. **COMO interpretar** - Se é busca literal, semântica, por domínio, etc
 
----
-
-## REGRAS OBRIGATÓRIAS
-
-✅ **SIM - Faça isso:**
-- Seja ESPECÍFICO e DETALHADO sobre a condição
-- Inclua os CRITÉRIOS SEMÂNTICOS exatos (palavras-chave, temas, intenções)
-- Mencione EXPLICITAMENTE os destinatários/configurações quando aplicável
-- Use tom OPERACIONAL (objetivo, claro, sem ambiguidade)
-- Mantenha entre 2-3 frases concisas
-
-❌ **NÃO - Evite:**
-- Copiar a regra original sem melhorar
-- Ser genérico ou vago ("quando um email chegar...")
-- Omitir detalhes importantes da condição
-- Usar formato JSON, bullets ou markdown
-- Inventar ações que não existem
+**IMPORTANTE:**
+- ✅ USE EXATAMENTE as configurações fornecidas (nomes de labels, destinatários, etc)
+- ✅ NÃO INVENTE informações que não foram fornecidas
+- ✅ Seja PRECISO na condição (palavras-chave, domínios, etc)
+- ✅ Mantenha 1-2 frases objetivas
+- ❌ NÃO copie a regra original sem melhorar
+- ❌ NÃO seja genérico ("quando um email chegar...")
 
 ---
 
-## EXEMPLOS DE BONS PLANOS
+## EXEMPLOS
 
-**Ruim** (genérico):
-"Quando um email for recebido, encaminhe para usuario@exemplo.com."
+**Entrada:** "e-mail do mercado pago"
+**Saída:** "Quando receber um e-mail que mencione 'Mercado Pago' ou 'mercadopago' no remetente, assunto ou corpo."
 
-**Bom** (específico):
-"Quando receber um e-mail cujo CONTEÚDO mencione explicitamente temas de 'educação', 'crescimento pessoal' ou 'ensino', encaminhe-o para usuario@exemplo.com preservando o conteúdo original."
+**Entrada:** "fatura, boletos, nota fiscal"
+**Saída:** "Quando receber um e-mail que contenha as palavras 'fatura', 'boleto' ou 'nota fiscal' no assunto ou corpo (excluindo e-mails de compra de produtos)."
 
-**Ruim** (vago):
-"Se for do domínio empresa.com, encaminhar."
-
-**Bom** (preciso):
-"Quando o remetente pertencer ao domínio @empresa.com (qualquer usuário), encaminhe automaticamente para equipe@destino.com."
+**Entrada:** "mensagens urgentes"
+**Saída:** "Quando receber um e-mail que contenha a palavra 'urgente' no assunto ou que expresse necessidade de ação imediata no conteúdo."
 
 ---
 
-## RETORNE APENAS O PLANO TEXTUAL
-
-Não inclua prefixos, explicações ou formatação especial. Apenas o plano operacional em texto corrido.
+Retorne APENAS a condição expandida. Sem prefixos, sem explicações extras.
 PROMPT;
     }
 }

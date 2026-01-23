@@ -293,12 +293,26 @@ async function simulate() {
 }
 
 async function testWithRealEmails() {
-  if (!props.hasGmail || testingRealEmails.value) return
+
+  
+  if (!props.hasGmail) {
+    simulationError.value = 'Conecte o Gmail primeiro.'
+    return
+  }
+  
+  if (testingRealEmails.value) return
+  
+  if (!form.rule || form.rule.trim() === '') {
+    simulationError.value = 'Preencha a condição antes de testar.'
+    return
+  }
+  
   simulationError.value = null
   realEmailExamples.value = null
   testingRealEmails.value = true
   
   try {
+    console.log('Enviando requisição...')
     const response = await fetch(route('automations.test-with-real-emails'), {
       method: 'POST',
       headers: {
@@ -312,18 +326,25 @@ async function testWithRealEmails() {
         _token: csrfToken,
         trigger_type_id: form.trigger_type_id,
         rule: form.rule,
+        automation_id: props.automation?.id || null,
       }),
       credentials: 'same-origin',
     })
 
+    console.log('Resposta recebida:', response.status)
+
     if (!response.ok) {
       const error = await response.json()
+      console.error('Erro na resposta:', error)
       simulationError.value = error.message || 'Não foi possível testar.'
       return
     }
 
-    realEmailExamples.value = await response.json()
+    const data = await response.json()
+    console.log('Dados recebidos:', data)
+    realEmailExamples.value = data
   } catch (error) {
+    console.error('Erro na requisição:', error)
     simulationError.value = 'Erro de rede ao testar com e-mails reais.'
   } finally {
     testingRealEmails.value = false
@@ -629,11 +650,8 @@ function deleteAutomation() {
                 {{ translateError(simulationError) }}
               </p>
             </div>
+            
             <div class="flex items-center gap-2">
-              <Button variant="secondary" :disabled="!hasGmail || testingRealEmails" @click="testWithRealEmails">
-                <Icon v-if="testingRealEmails" icon="lucide:loader-2" class="mr-2 h-4 w-4 animate-spin" />
-                {{ testingRealEmails ? 'Buscando...' : 'Testar com exemplos reais' }}
-              </Button>
               <Button
                 v-if="isEditing"
                 variant="outline"
@@ -653,6 +671,115 @@ function deleteAutomation() {
               <Button :disabled="!hasGmail || form.processing" @click="submit">
                 {{ form.processing ? 'Salvando...' : (isEditing ? 'Salvar' : 'Salvar rascunho') }}
               </Button>
+            </div>
+            
+            <div class="border-t pt-3">
+              <Button variant="secondary" class="w-full" :disabled="!hasGmail || testingRealEmails" @click="testWithRealEmails">
+                <Icon v-if="testingRealEmails" icon="lucide:loader-2" class="mr-2 h-4 w-4 animate-spin" />
+                <Icon v-else icon="lucide:test-tube" class="mr-2 h-4 w-4" />
+                {{ testingRealEmails ? 'Buscando...' : 'Testar com exemplos reais' }}
+              </Button>
+              <p class="mt-2 text-xs text-muted-foreground text-center">
+                Vamos analisar os 10 e-mails mais recentes da sua caixa principal. Se nenhum corresponder à condição, não se preocupe - a automação funcionará quando novos e-mails chegarem.
+              </p>
+              
+              <!-- Resultados do teste -->
+              <div v-if="realEmailExamples?.status === 'error' || realEmailExamples?.status === 'warning'" class="mt-4 rounded-lg border border-red-200 bg-red-50/30 p-4">
+                <div class="flex items-center gap-2 text-red-700 mb-2">
+                  <Icon icon="lucide:alert-circle" class="h-5 w-5" />
+                  <p class="font-semibold">Erro ao testar</p>
+                </div>
+                <p class="text-sm text-muted-foreground mb-3">{{ realEmailExamples.message }}</p>
+                <div v-if="realEmailExamples.debug" class="rounded-lg bg-white p-3 text-xs font-mono">
+                  <p class="font-semibold text-red-600 mb-2">Detalhes técnicos:</p>
+                  <pre class="whitespace-pre-wrap text-gray-700">{{ JSON.stringify(realEmailExamples.debug, null, 2) }}</pre>
+                </div>
+                <div v-if="realEmailExamples.debug?.context?.status === 401" class="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <p class="text-sm text-amber-800">
+                    <Icon icon="lucide:key" class="h-4 w-4 inline mr-1" />
+                    <strong>Token expirado.</strong> Tente reconectar o Gmail em 
+                    <a :href="route('integrations.index')" class="underline font-semibold">Integrações</a>.
+                  </p>
+                </div>
+              </div>
+
+              <div v-if="realEmailExamples?.status === 'ok' && realEmailExamples?.examples?.length === 0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50/30 p-4">
+                <div class="flex items-center gap-2 text-amber-700 mb-2">
+                  <Icon icon="lucide:info" class="h-5 w-5" />
+                  <p class="font-semibold">Nenhum e-mail encontrado</p>
+                </div>
+                <p class="text-sm text-muted-foreground mb-1">{{ realEmailExamples.message }}</p>
+                <p class="text-sm text-muted-foreground">
+                  A condição que você definiu não corresponde a nenhum dos 
+                  <strong>{{ realEmailExamples.total_analyzed || 10 }} e-mails mais recentes</strong> da sua caixa.
+                  Tente ajustar a regra ou aguarde novos e-mails chegarem.
+                </p>
+              </div>
+
+              <div v-if="realEmailExamples?.examples?.length > 0" class="mt-4 rounded-lg border border-blue-200 bg-blue-50/30 p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <Icon icon="lucide:test-tube" class="h-5 w-5 text-blue-600" />
+                    <p class="font-semibold text-blue-900">Teste com e-mails reais</p>
+                  </div>
+                  <Badge variant="outline" class="flex items-center gap-1">
+                    <Icon icon="lucide:mail" class="h-4 w-4" />
+                    {{ realEmailExamples.examples.length }} encontrado{{ realEmailExamples.examples.length > 1 ? 's' : '' }}
+                  </Badge>
+                </div>
+                <p class="text-sm text-blue-700 mb-3">{{ realEmailExamples.message }}</p>
+                <div class="space-y-2">
+                  <div
+                    v-for="(example, idx) in realEmailExamples.examples"
+                    :key="idx"
+                    class="flex items-start gap-3 rounded-lg border p-3 transition bg-white"
+                    :class="{
+                      'border-emerald-200': example.decision === 'execute',
+                      'border-amber-200': example.decision === 'uncertain',
+                      'border-gray-200': example.decision === 'ignore',
+                    }"
+                  >
+                    <Icon
+                      :icon="example.icon"
+                      class="mt-1 h-5 w-5 shrink-0"
+                      :class="{
+                        'text-emerald-600': example.decision === 'execute',
+                        'text-amber-600': example.decision === 'uncertain',
+                        'text-gray-500': example.decision === 'ignore',
+                      }"
+                    />
+                    
+                    <div class="flex-1 space-y-1.5">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1 space-y-0.5">
+                          <p class="font-medium text-sm">{{ example.subject }}</p>
+                          <p class="text-xs text-muted-foreground">De: {{ example.from }}</p>
+                        </div>
+                        <Badge
+                          :variant="example.variant"
+                          class="shrink-0"
+                        >
+                          <span v-if="example.decision === 'execute'">Vai executar</span>
+                          <span v-else-if="example.decision === 'uncertain'">Incerteza</span>
+                          <span v-else>Ignorar</span>
+                        </Badge>
+                      </div>
+                      
+                      <p v-if="example.snippet" class="text-xs text-muted-foreground">
+                        {{ example.snippet }}
+                      </p>
+                      
+                      <div v-if="example.reasoning" class="rounded-md bg-gray-50 p-2 text-xs">
+                        <p class="text-muted-foreground">{{ example.reasoning }}</p>
+                        <div v-if="example.confidence !== null" class="mt-1 flex items-center gap-1.5">
+                          <Icon icon="lucide:gauge" class="h-3 w-3" />
+                          <span class="font-medium">{{ Math.round(example.confidence * 100) }}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

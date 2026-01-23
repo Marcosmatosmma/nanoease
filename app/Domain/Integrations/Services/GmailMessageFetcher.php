@@ -17,7 +17,8 @@ final class GmailMessageFetcher
 
     public function fetch(Integration $integration, string $query, int $limit = 5): array
     {
-        $token = $this->resolveAccessToken($integration);
+        $token = $integration->access_token;
+        
         if (! $token) {
             return ['status' => 'error', 'message' => 'Token do Gmail ausente ou inválido.'];
         }
@@ -28,14 +29,29 @@ final class GmailMessageFetcher
             'includeSpamTrash' => false,
         ]);
 
-        if ($listResponse->status() === 401 && $this->shouldRefresh($integration)) {
-            $token = $this->refreshAccessToken($integration);
-            if ($token) {
+        // Se 401 e temos refresh_token, tentar refresh
+        if ($listResponse->status() === 401 && $this->hasRefreshToken($integration)) {
+            \Log::info('Token expirado, tentando refresh...', [
+                'has_refresh_token' => $this->hasRefreshToken($integration),
+            ]);
+            
+            $newToken = $this->refreshAccessToken($integration);
+            
+            \Log::info('Resultado do refresh:', [
+                'success' => $newToken ? 'SIM' : 'NÃO',
+                'new_token_preview' => $newToken ? substr($newToken, 0, 20) . '...' : null,
+            ]);
+            
+            if ($newToken) {
+                $token = $newToken;
                 $listResponse = Http::withToken($token)->get(self::LIST_URL, [
                     'q' => $query,
                     'maxResults' => $limit,
-                    'labelIds' => ['INBOX'],
                     'includeSpamTrash' => false,
+                ]);
+                
+                \Log::info('Tentativa após refresh:', [
+                    'status' => $listResponse->status(),
                 ]);
             }
         }
@@ -129,34 +145,7 @@ final class GmailMessageFetcher
         return base64_decode(str_replace(['-', '_'], ['+', '/'], $data));
     }
 
-    private function resolveAccessToken(Integration $integration): ?string
-    {
-        $metadata = $integration->metadata ?? [];
-
-        if ($this->tokenIsFresh($metadata)) {
-            return $metadata['token'] ?? null;
-        }
-
-        return $this->refreshAccessToken($integration);
-    }
-
-    private function tokenIsFresh(array $metadata): bool
-    {
-        $token = $metadata['token'] ?? null;
-        $expiresIn = $metadata['expires_in'] ?? null;
-        $refreshedAt = $metadata['refreshed_at'] ?? null;
-
-        if (! $token || ! $expiresIn || ! $refreshedAt) {
-            return false;
-        }
-
-        $refreshed = CarbonImmutable::createFromTimestamp((int) $refreshedAt);
-        $expiresAt = $refreshed->addSeconds((int) $expiresIn - 60);
-
-        return CarbonImmutable::now()->lessThan($expiresAt);
-    }
-
-    private function shouldRefresh(Integration $integration): bool
+    private function hasRefreshToken(Integration $integration): bool
     {
         return (bool) Arr::get($integration->metadata ?? [], 'refresh_token');
     }

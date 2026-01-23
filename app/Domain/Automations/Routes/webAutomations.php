@@ -27,11 +27,23 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('/automations/email-received/simulate', [AutomationController::class, 'simulateEmailReceived'])
             ->name('automations.email-received.simulate');
 
-        Route::post('/automations/test-with-real-emails', [AutomationController::class, 'testWithRealEmails'])
-            ->name('automations.test-with-real-emails');
-
         Route::post('/automations/email-received/{automation?}', [AutomationController::class, 'storeEmailReceived'])
             ->name('automations.email-received.store');
+
+        Route::get('/automations/email-mass-send', [AutomationController::class, 'emailMassSend'])
+            ->name('automations.email-mass-send');
+
+        Route::get('/automations/email-mass-send/{massEmailSend}', [AutomationController::class, 'emailMassSendView'])
+            ->name('automations.email-mass-send.edit');
+
+        Route::post('/automations/email-mass-send/{massEmailSend?}', [AutomationController::class, 'storeEmailMassSend'])
+            ->name('automations.email-mass-send.store');
+
+        Route::delete('/automations/email-mass-send/{massEmailSend}', [AutomationController::class, 'destroyMassEmailSend'])
+            ->name('automations.mass-email-send.destroy');
+
+        Route::post('/automations/email-mass-send/{massEmailSend}/resend', [AutomationController::class, 'resendMassEmailSend'])
+            ->name('automations.mass-email-send.resend');
 
         Route::patch('/automations/{automation}/status', [AutomationController::class, 'updateStatus'])
             ->name('automations.status');

@@ -31,6 +31,7 @@ const actionLabel = (type) => {
     encaminhar: 'Encaminhar e-mail',
     responder: 'Responder automaticamente',
     tarefa: 'Criar tarefa',
+    envio_massa: 'Envio em massa',
   }
   return map[type] || 'Ação definida'
 }
@@ -40,6 +41,10 @@ const statusVariant = (status) => {
     draft: 'secondary',
     active: 'success',
     paused: 'outline',
+    processing: 'default',
+    completed: 'success',
+    scheduled: 'outline',
+    failed: 'destructive',
   }
   return map[status] || 'outline'
 }
@@ -49,6 +54,10 @@ const statusLabel = (status) => {
     draft: 'Rascunho',
     active: 'Ativa',
     paused: 'Pausada',
+    processing: 'Processando',
+    completed: 'Concluído',
+    scheduled: 'Agendado',
+    failed: 'Falhou',
   }
   return map[status] || 'Rascunho'
 }
@@ -95,20 +104,37 @@ const nextStatusLabel = (status) => {
           <Link
             v-for="item in automations"
             :key="item.id"
-            :href="route('automations.email-received.edit', { automation: item.id })"
+            :href="item.type === 'mass_email_send' 
+              ? route('automations.email-mass-send.edit', { massEmailSend: item.id })
+              : route('automations.email-received.edit', { automation: item.id })"
             class="block rounded-lg border border-muted-foreground/20 transition hover:border-primary"
           >
             <CardContent class="flex flex-col gap-3 p-4">
               <div class="flex items-start justify-between gap-3">
-                <div class="space-y-1">
+                <div class="space-y-1 flex-1">
                   <div class="flex items-center gap-2">
-                    <Icon icon="lucide:sparkles" class="h-4 w-4 text-primary" />
-                    <p class="font-semibold">E-mail recebido</p>
+                    <Icon 
+                      :icon="item.type === 'mass_email_send' ? 'lucide:mail-plus' : 'lucide:sparkles'" 
+                      class="h-4 w-4 text-primary" 
+                    />
+                    <p class="font-semibold">
+                      {{ item.event?.title || (item.type === 'mass_email_send' ? 'Envio em massa' : 'E-mail recebido') }}
+                    </p>
                   </div>
                   <p class="text-sm text-muted-foreground truncate">
-                    Regra: {{ item.rule }}
+                    {{ item.rule }}
                   </p>
-                  <p class="text-sm text-muted-foreground">
+                  
+                  <!-- Info específica de envio em massa -->
+                  <div v-if="item.type === 'mass_email_send' && item.stats" class="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{{ item.stats.sent }}/{{ item.stats.total }} enviados</span>
+                    <span v-if="item.stats.failed > 0" class="text-red-600">
+                      · {{ item.stats.failed }} falhas
+                    </span>
+                  </div>
+                  
+                  <!-- Info de automação normal -->
+                  <p v-else class="text-sm text-muted-foreground">
                     Ação: {{ actionLabel(item.action_type) }}
                   </p>
                 </div>

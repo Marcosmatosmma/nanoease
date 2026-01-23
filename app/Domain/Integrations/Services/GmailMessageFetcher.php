@@ -23,7 +23,7 @@ final class GmailMessageFetcher
             return ['status' => 'error', 'message' => 'Token do Gmail ausente ou inválido.'];
         }
 
-        $listResponse = Http::withToken($token)->get(self::LIST_URL, [
+        $listResponse = Http::withToken($token)->timeout(30)->get(self::LIST_URL, [
             'q' => $query,
             'maxResults' => $limit,
             'includeSpamTrash' => false,
@@ -44,7 +44,7 @@ final class GmailMessageFetcher
             
             if ($newToken) {
                 $token = $newToken;
-                $listResponse = Http::withToken($token)->get(self::LIST_URL, [
+                $listResponse = Http::withToken($token)->timeout(30)->get(self::LIST_URL, [
                     'q' => $query,
                     'maxResults' => $limit,
                     'includeSpamTrash' => false,
@@ -84,7 +84,7 @@ final class GmailMessageFetcher
             return null;
         }
 
-        $response = Http::withToken($token)->get(sprintf(self::GET_URL, $id), [
+        $response = Http::withToken($token)->timeout(30)->get(sprintf(self::GET_URL, $id), [
             'format' => 'full',
         ]);
 

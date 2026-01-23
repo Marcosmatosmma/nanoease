@@ -121,6 +121,7 @@ final class RunEmailAutomations extends Command
                 
                 DB::table('automation_executions')->insert([
                     'automation_id' => $automation->id,
+                    'team_id' => $automation->team_id, // Multi-tenancy
                     'email_id' => $msg['id'],
                     'email_subject' => $msg['subject'] ?? null,
                     'email_from' => $msg['from'] ?? null,
@@ -153,14 +154,41 @@ final class RunEmailAutomations extends Command
         $triggerKey = $automation->triggerType->key ?? '';
         $rule = $automation->rule_text;
         
+        // Extrai email do formato "Nome <email@domain.com>"
         preg_match('/<(.+?)>/', $event['from'], $emailMatches);
         $email = $emailMatches[1] ?? $event['from'];
         
         return match($triggerKey) {
+            'sender_specific' => strcasecmp($email, trim($rule)) === 0,
             'sender_exact' => strcasecmp($email, trim($rule)) === 0,
             'sender_domain' => str_contains(strtolower($email), '@' . str_replace('@', '', strtolower(trim($rule)))),
-            'subject_contains' => stripos($event['subject'], $rule) !== false,
+            'subject_contains' => $this->matchSubjectContains($event['subject'], $rule),
             default => false,
         };
+    }
+
+    /**
+     * Verifica se o assunto contém alguma das palavras-chave
+     * Suporta múltiplas palavras separadas por vírgula
+     * 
+     * @param string $subject Assunto do email
+     * @param string $rule Regra com palavras separadas por vírgula
+     * @return bool true se encontrou match
+     */
+    private function matchSubjectContains(string $subject, string $rule): bool
+    {
+        // Separa por vírgula e remove espaços
+        $keywords = array_map('trim', explode(',', $rule));
+        
+        // Verifica se o assunto contém alguma das palavras-chave
+        foreach ($keywords as $keyword) {
+            if (empty($keyword)) continue;
+            
+            if (stripos($subject, $keyword) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

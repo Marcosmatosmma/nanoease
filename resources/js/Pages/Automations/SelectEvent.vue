@@ -29,6 +29,7 @@ const props = defineProps({
 const eventRoute = (eventKey) => {
   const routeMap = {
     email_received: 'automations.email-received',
+    email_mass_send: 'automations.email-mass-send',
   }
   return routeMap[eventKey] || 'automations.index'
 }

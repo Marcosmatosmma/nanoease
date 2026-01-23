@@ -35,7 +35,7 @@ final class EmailActionExecutionPrompt extends BasePrompt
         return <<<PROMPT
 # Contexto do Sistema MCP - Model Context Protocol
 
-Você é um VERIFICADOR RIGOROSO de automações de e-mail. Sua função é analisar e-mails com EXTREMA PRECISÃO e LITERALIDADE.
+Você é um VERIFICADOR de automações de e-mail. Sua função é analisar e-mails.
 
 ## Regra Planejada (já otimizada para interpretação):
 ```
@@ -54,45 +54,50 @@ Você é um VERIFICADOR RIGOROSO de automações de e-mail. Sua função é anal
 
 ---
 
-## REGRAS ANTI-ALUCINAÇÃO (CRÍTICO):
+## REGRAS DE VERIFICAÇÃO (SIMPLES E DIRETO):
 
-⚠️ **PROIBIDO INVENTAR INFORMAÇÕES**
-- Você DEVE ser 100% LITERAL ao verificar palavras-chave ou FRASES COMPLETAS
-- NUNCA diga que encontrou algo se NÃO APARECE EXATAMENTE no texto
-- SEMPRE cite o trecho EXATO onde encontrou a condição
-- Em caso de QUALQUER dúvida: `should_execute: false`
+⚠️ **PRINCÍPIO FUNDAMENTAL**
+Você está fazendo **BUSCA DE SUBSTRING** - a palavra pode aparecer em QUALQUER contexto, sozinha ou junto com outras palavras.
 
-✅ **PADRÃO DE VERIFICAÇÃO ULTRA LITERAL:**
-1. A regra pede FRASE "cartão de embarque"? Procure EXATAMENTE "cartão de embarque" (todas as palavras juntas)
-2. Encontrou a FRASE COMPLETA? Cite o trecho: "encontrado em: '...cartão de embarque...'"
-3. Encontrou apenas PARTE da frase (ex: só "cartão" ou só "embarque")? → `should_execute: false`
-4. Encontrou palavra similar/relacionada? → `should_execute: false`
-5. NÃO encontrou EXATAMENTE? → `should_execute: false` - SEM exceções
+✅ **NORMALIZAÇÃO (para evitar falsos negativos):**
+- **Ignore** maiúsculas/minúsculas
+- **Ignore** acentos ("reuniao" = "reunião", "nota" = "nóta")
+- **Ignore** pontuação extra
 
-❌ **PROIBIDO - EXEMPLOS DE FALSOS POSITIVOS:**
-- "Cartão: CE-946" NÃO contém "cartão de embarque" (falta "de embarque")
-- "SACFiscal Automação" NÃO contém "SACFiscal" sozinho? → SIM contém, OK
-- "Solicita fiscal" NÃO contém "SACFiscal" (palavras diferentes)
-- "O e-mail menciona indiretamente..." → Se não está escrito EXATAMENTE, não existe
-- "O contexto sugere que..." → Análise deve ser literal, não interpretativa
-- "Parece relacionado a..." → Relação não é match exato
-- "A palavra X está implícita..." → Implícito = NÃO EXISTE literalmente
-- Aceitar sinônimos ou termos relacionados ou partes da frase → PROIBIDO
+✅ **COMO FAZER MATCH DE PALAVRAS INDIVIDUAIS:**
 
-🎯 **MATCH VÁLIDO:**
-- Regra: "cartão de embarque" → Corpo: "Aqui está seu cartão de embarque" ✅
-- Regra: "cartão de embarque" → Corpo: "Cartão: CE-946" ❌ (falta "de embarque")
-- Regra: "SACFiscal" → Corpo: "Boletim SACFiscal" ✅
-- Regra: "SACFiscal" → Corpo: "SAC Fiscal" ❌ (separado, não é exatamente igual)
+**IMPORTANTE**: A palavra pode aparecer em QUALQUER lugar do texto, sozinha ou junto com outras palavras!
+
+- ✅ "boleto" encontra em: "boleto", "novo boleto", "boleto vence", "seu boleto disponível"
+- ✅ "nota" encontra em: "nota", "sua nota", "nota fiscal", "envio da nota"
+- ✅ "reunião" encontra em: "reunião", "marcação de reunião", "reunião dia 10"
+
+**NÃO ACEITE ESTES RACIOCÍNIOS ERRADOS:**
+- ❌ "a palavra não está sozinha" → ERRADO! Pode estar junto com outras
+- ❌ "está dentro de uma frase" → ERRADO! Isso é válido
+- ❌ "tem outras palavras junto" → ERRADO! Isso não importa
+
+✅ **EXEMPLOS PRÁTICOS:**
+
+| Regra | Assunto/Corpo | Match? | Por quê |
+|-------|---------------|--------|---------|
+| palavra 'boleto' | "boleto vence amanha" | ✅ SIM | contém "boleto" |
+| palavra 'boleto' | "novo boleto" | ✅ SIM | contém "boleto" |
+| palavra 'boleto' | "envio do boleto em anexo" | ✅ SIM | contém "boleto" |
+| palavra 'reunião' | "Reuniao dia 10" | ✅ SIM | contém "reuniao" (sem acento) |
+| palavra 'reunião' | "marcação de reunião" | ✅ SIM | contém "reunião" |
+| palavras 'nota' ou 'fiscal' | "sua nota fiscal" | ✅ SIM | contém ambas |
+| palavra 'urgente' | "preciso de ajuda" | ❌ NÃO | NÃO contém "urgente" |
 
 ---
 
 ## Sua Tarefa:
 
-1. **Verifique LITERALMENTE** se o e-mail atende às condições da regra
-2. **Cite trechos exatos** que comprovem o match (ou indique que não encontrou)
-3. **Decida** se deve executar (padrão: NÃO, só SIM se houver match comprovado)
-4. **Retorne** APENAS um objeto JSON válido seguindo este schema:
+1. **Leia a regra** e identifique quais palavras procurar
+2. **Procure no assunto e corpo** do email (busca de substring, case-insensitive, sem acento)
+3. **Se encontrou**: cite o trecho onde encontrou
+4. **Se NÃO encontrou**: diga claramente que não encontrou
+5. **Retorne** APENAS um objeto JSON válido:
 
 ```json
 {$jsonSchema}
@@ -100,29 +105,41 @@ Você é um VERIFICADOR RIGOROSO de automações de e-mail. Sua função é anal
 
 ---
 
-## Regras de Decisão (RIGOROSAS):
+## Regras de Decisão:
 
-- **PADRÃO**: `should_execute: false` (só muda para true com EVIDÊNCIA CONCRETA)
-- `should_execute: true` SOMENTE se você consegue CITAR o trecho exato do e-mail que atende à regra
-- `confidence` deve ser < 0.8 se houver qualquer ambiguidade
-- `matched_conditions` deve incluir os TRECHOS LITERAIS encontrados (ex: "palavra 'SACFiscal' encontrada no corpo: '...Projeto SACFiscal...'")
-- `reasoning` deve explicar EXATAMENTE onde/como a condição foi atendida (ou por que não foi)
-- Se a regra menciona palavras-chave específicas, você DEVE encontrá-las LITERALMENTE
+- **PADRÃO**: `should_execute: false`
+- **Execute** (`should_execute: true`) SOMENTE se encontrou as palavras pedidas
+- **SEMPRE cite** o trecho do email onde encontrou
+- **Confidence**: 
+  - `1.0` quando encontrar palavra
+  - `0.9` quando encontrar com normalização leve
+  - `< 0.8` se houver dúvida real
+- **matched_conditions**: liste o que encontrou e onde
+- **reasoning**: seja objetivo
 
 ---
 
-## Exemplos de Verificação Correta:
+## Exemplos Corretos:
 
-**Regra**: "E-mail deve conter a palavra 'urgente'"
-**Corpo**: "Prezado, preciso de ajuda com o sistema."
-**Decisão**: `should_execute: false` - palavra 'urgente' NÃO encontrada
-**Reasoning**: "A palavra 'urgente' não aparece no assunto nem no corpo do e-mail."
+**Regra**: "palavra 'urgente'"
+**Assunto**: "preciso de ajuda"
+**Corpo**: "sistema está lento"
+→ `should_execute: false`, reasoning: "Palavra 'urgente' não encontrada."
 
-**Regra**: "E-mail deve conter a palavra 'urgente'"
-**Corpo**: "URGENTE: Sistema fora do ar!"
-**Decisão**: `should_execute: true` - palavra encontrada
-**Matched conditions**: ["palavra 'urgente' encontrada no corpo: 'URGENTE: Sistema fora do ar!'"]
-**Reasoning**: "Palavra 'urgente' encontrada literalmente no início do corpo."
+**Regra**: "palavra 'boleto'"
+**Assunto**: "novo boleto"
+**Corpo**: "seu boleto disponível"
+→ `should_execute: true`, confidence: 1.0, matched_conditions: ["palavra 'boleto' no assunto: 'novo boleto'"], reasoning: "Palavra 'boleto' encontrada no assunto."
+
+**Regra**: "palavras 'nota', 'fiscal', 'boleto'"  
+**Assunto**: "nota fiscal pendente"
+**Corpo**: "segue nota"
+→ `should_execute: true`, confidence: 1.0, matched_conditions: ["'nota' e 'fiscal' no assunto"], reasoning: "Palavras 'nota' e 'fiscal' encontradas no assunto."
+
+**Regra**: "palavra 'reunião' (ou variações como meeting)"
+**Assunto**: "Meeting tomorrow"
+**Corpo**: "let's have a meeting"
+→ `should_execute: true`, confidence: 1.0, matched_conditions: ["'meeting' no assunto"], reasoning: "Variação 'meeting' encontrada."
 
 ---
 
@@ -156,7 +173,8 @@ Você é um VERIFICADOR RIGOROSO de automações de e-mail. Sua função é anal
 ---
 
 **LEMBRE-SE**: 
-- SER LITERAL é mais importante que ser útil
+- Evidência textual > utilidade
+- Prefira Camada A; use Camada B quando a regra indicar intenção e houver evidência (com confiança alta e trecho claro)
 - Em caso de dúvida: `should_execute: false`
 - NUNCA invente que encontrou algo que não está escrito
 

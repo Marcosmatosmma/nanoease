@@ -6,11 +6,14 @@ namespace App\Domain\Automations\Controllers;
 
 use App\Domain\Integrations\Actions\ListUserIntegrationsAction;
 use App\Domain\Automations\Actions\StoreEmailAutomationAction;
+use App\Domain\Automations\Actions\StoreEmailMassSendAction;
 use App\Domain\Automations\Requests\StoreEmailAutomationRequest;
+use App\Domain\Automations\Requests\StoreEmailMassSendRequest;
 use App\Domain\Automations\Actions\SimulateEmailAutomationAction;
 use App\Domain\Automations\Requests\SimulateEmailAutomationRequest;
 use App\Domain\Automations\Actions\ListUserAutomationsAction;
 use App\Domain\Automations\Models\Automation;
+use App\Domain\Automations\Models\MassEmailSend;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -30,18 +33,7 @@ final class AutomationController extends Controller
         $integrations = $listUserIntegrationsAction->handle($user);
         $gmail = $integrations->get('gmail');
 
-        $automations = $listUserAutomationsAction->handle($user)->map(function ($automation) {
-            $action = $automation->actions->first();
-
-            return [
-                'id' => $automation->id,
-                'event' => $automation->event,
-                'rule' => $automation->rule_text,
-                'status' => $automation->status,
-                'action_type' => $action?->type,
-                'updated_at' => $automation->updated_at,
-            ];
-        });
+        $automations = $listUserAutomationsAction->handle($user);
 
         return Inertia::render('Automations/Index', [
             'connectedEmail' => data_get($gmail?->metadata, 'email'),
@@ -168,48 +160,6 @@ final class AutomationController extends Controller
         return response()->json($result);
     }
 
-    public function testWithRealEmails(
-        \Illuminate\Http\Request $request,
-        ListUserIntegrationsAction $listUserIntegrationsAction,
-        \App\Domain\Automations\Actions\TestAutomationWithRealEmailsAction $testAction,
-    ): JsonResponse {
-        $user = Auth::user();
-        abort_unless($user, 401);
-
-        $integrations = $listUserIntegrationsAction->handle($user);
-        $gmail = $integrations->get('gmail');
-
-        if (! $gmail || $gmail->status !== 'connected') {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Conecte o Gmail antes de testar.',
-                'examples' => [],
-            ], 422);
-        }
-
-        $automationId = $request->integer('automation_id');
-        $ruleText = $request->string('rule')->toString();
-        
-        if ($automationId) {
-            $automation = Automation::where('id', $automationId)
-                ->where('user_id', $user->id)
-                ->first();
-            
-            if ($automation && $automation->plan_rule_text) {
-                $ruleText = $automation->plan_rule_text;
-            }
-        }
-
-        $result = $testAction->handle(
-            user: $user,
-            integration: $gmail,
-            triggerTypeId: $request->integer('trigger_type_id'),
-            ruleText: $ruleText,
-        );
-
-        return response()->json($result);
-    }
-
     public function storeEmailReceived(
         StoreEmailAutomationRequest $request,
         ListUserIntegrationsAction $listUserIntegrationsAction,
@@ -271,5 +221,167 @@ final class AutomationController extends Controller
         $automation->delete();
 
         return Redirect::route('automations.index')->with('success', 'Automação removida.');
+    }
+
+    /**
+     * Exibe o formulário de criação de envio em massa
+     * Carrega integrações e renderiza a página Vue
+     */
+    public function emailMassSend(
+        ListUserIntegrationsAction $listUserIntegrationsAction,
+    ): Response {
+        $user = Auth::user();
+
+        $integrations = $listUserIntegrationsAction->handle($user);
+        $gmail = $integrations->get('gmail');
+
+        return Inertia::render('Automations/EmailMassSend', [
+            'connectedEmail' => data_get($gmail?->metadata, 'email'),
+            'hasGmail' => $gmail?->status === 'connected',
+            'automation' => null,
+        ]);
+    }
+
+    /**
+     * Exibe detalhes/relatório de um envio em massa
+     * Mostra estatísticas e lista de destinatários
+     */
+    public function emailMassSendView(
+        MassEmailSend $massEmailSend,
+        ListUserIntegrationsAction $listUserIntegrationsAction,
+    ): Response {
+        $user = Auth::user();
+        abort_unless($user && $massEmailSend->user_id === $user->id, 403);
+
+        $integrations = $listUserIntegrationsAction->handle($user);
+        $gmail = $integrations->get('gmail');
+
+        // Busca destinatários
+        $recipients = $massEmailSend->recipients()
+            ->orderBy('status')
+            ->orderBy('email')
+            ->get()
+            ->map(function ($recipient) {
+                return [
+                    'id' => $recipient->id,
+                    'email' => $recipient->email,
+                    'data' => $recipient->data,
+                    'status' => $recipient->status,
+                    'error_message' => $recipient->error_message,
+                    'ignore_reason' => $recipient->ignore_reason,
+                    'sent_at' => $recipient->sent_at,
+                ];
+            });
+
+        return Inertia::render('Automations/EmailMassSendView', [
+            'connectedEmail' => data_get($gmail?->metadata, 'email'),
+            'hasGmail' => $gmail?->status === 'connected',
+            'massEmailSend' => [
+                'id' => $massEmailSend->id,
+                'name' => $massEmailSend->name,
+                'send_type' => $massEmailSend->send_type,
+                'scheduled_at' => $massEmailSend->scheduled_at,
+                'subject' => $massEmailSend->subject,
+                'body' => $massEmailSend->body,
+                'status' => $massEmailSend->status,
+                'total_recipients' => $massEmailSend->total_recipients,
+                'valid_recipients' => $massEmailSend->valid_recipients,
+                'invalid_recipients' => $massEmailSend->invalid_recipients,
+                'sent_count' => $massEmailSend->sent_count,
+                'failed_count' => $massEmailSend->failed_count,
+                'started_at' => $massEmailSend->started_at,
+                'completed_at' => $massEmailSend->completed_at,
+            ],
+            'recipients' => $recipients,
+        ]);
+    }
+
+    /**
+     * Salva ou atualiza um envio em massa
+     * Valida, cria registros e dispara o processamento
+     */
+    public function storeEmailMassSend(
+        StoreEmailMassSendRequest $request,
+        ListUserIntegrationsAction $listUserIntegrationsAction,
+        StoreEmailMassSendAction $storeEmailMassSendAction,
+        ?MassEmailSend $massEmailSend = null,
+    ): RedirectResponse {
+        $user = Auth::user();
+        abort_unless($user, 401);
+
+        // Verifica se está editando e se pertence ao usuário
+        if ($massEmailSend && $massEmailSend->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $integrations = $listUserIntegrationsAction->handle($user);
+        $gmail = $integrations->get('gmail');
+
+        if (!$gmail || $gmail->status !== 'connected') {
+            return Redirect::back()->withErrors([
+                'integration' => 'Conecte o Gmail antes de continuar.',
+            ]);
+        }
+
+        // Executa a action
+        $result = $storeEmailMassSendAction->handle(
+            user: $user,
+            integration: $gmail,
+            data: $request->validated(),
+            massEmailSend: $massEmailSend,
+        );
+
+        $message = $massEmailSend 
+            ? 'Envio em massa atualizado com sucesso!'
+            : ($request->input('send_type') === 'now' 
+                ? 'Envio iniciado! Acompanhe o progresso.' 
+                : 'Envio agendado com sucesso!');
+
+        return Redirect::route('automations.index')->with('success', $message);
+    }
+
+    /**
+     * Apaga um envio em massa
+     */
+    public function destroyMassEmailSend(MassEmailSend $massEmailSend): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user && $massEmailSend->user_id === $user->id, 403);
+
+        $massEmailSend->delete();
+
+        return Redirect::route('automations.index')->with('success', 'Envio em massa removido.');
+    }
+
+    /**
+     * Reenvia emails que falharam
+     */
+    public function resendMassEmailSend(MassEmailSend $massEmailSend): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user && $massEmailSend->user_id === $user->id, 403);
+
+        // Reseta status dos emails que falharam para "pending"
+        $massEmailSend->recipients()
+            ->where('status', 'failed')
+            ->update([
+                'status' => 'pending',
+                'error_message' => null,
+                'sent_at' => null,
+                'message_id' => null,
+            ]);
+
+        // Atualiza contadores
+        $failedCount = $massEmailSend->failed_count;
+        $massEmailSend->update([
+            'status' => 'processing',
+            'sent_count' => 0,
+            'failed_count' => 0,
+        ]);
+
+        // Dispara o job novamente
+        \App\Jobs\ProcessMassEmailSendJob::dispatch($massEmailSend->id);
+
+        return Redirect::back()->with('success', "{$failedCount} email(s) serão reenviados.");
     }
 }

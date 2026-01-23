@@ -16,6 +16,12 @@ final class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Popula eventos e gatilhos de automação
+        $this->call([
+            AutomationEventSeeder::class,
+        ]);
+
+        // Cria usuário de teste
         User::factory()->withPersonalTeam()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

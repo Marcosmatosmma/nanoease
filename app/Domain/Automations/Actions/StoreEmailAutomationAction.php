@@ -29,6 +29,7 @@ final class StoreEmailAutomationAction
                 $automation = Automation::query()
                     ->where('id', $automationId)
                     ->where('user_id', $user->id)
+                    ->where('team_id', $user->currentTeam->id) // OBRIGATÓRIO - Multi-tenancy
                     ->firstOrFail();
 
                 $automation->update([
@@ -59,6 +60,7 @@ final class StoreEmailAutomationAction
 
             $automation = Automation::query()->create([
                 'user_id' => $user->id,
+                'team_id' => $user->currentTeam->id, // OBRIGATÓRIO - Multi-tenancy
                 'integration_id' => $integrationId,
                 'automation_event_id' => $automationEventId,
                 'trigger_type_id' => $triggerTypeId,

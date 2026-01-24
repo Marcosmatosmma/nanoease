@@ -33,6 +33,11 @@ const navigationConfig = [
         route: 'automations.index',
       },
       {
+        name: 'Tarefas',
+        icon: 'lucide:kanban-square',
+        route: 'tasks.index',
+      },
+      {
         name: 'E-mails Organizados',
         icon: 'lucide:inbox',
         route: 'emails.organized',

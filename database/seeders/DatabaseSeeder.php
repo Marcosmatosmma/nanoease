@@ -27,5 +27,10 @@ final class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
         ]);
+
+        // Cria boards e listas padrão para todos os usuários
+        $this->call([
+            BoardSeeder::class,
+        ]);
     }
 }

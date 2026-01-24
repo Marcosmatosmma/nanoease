@@ -13,6 +13,7 @@ use App\Domain\AI\Controllers\AIAssistantController;
 
 require app_path('Domain/Automations/Routes/webAutomations.php');
 require app_path('Domain/Integrations/Routes/webIntegrations.php');
+require app_path('Domain/Tasks/Routes/webTasks.php');
 
 Route::get('/', [WelcomeController::class, 'home'])->name('home');
 

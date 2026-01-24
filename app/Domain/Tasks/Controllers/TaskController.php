@@ -32,8 +32,17 @@ final class TaskController
         $user = Auth::user();
         $boards = $action->handle($user);
 
+        // Busca usuários do team para dropdown de responsável
+        $teamUsers = $user->currentTeam
+            ->allUsers()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+            ]);
+
         return Inertia::render('Tasks/Kanban', [
             'boards' => $boards,
+            'teamUsers' => $teamUsers,
         ]);
     }
 

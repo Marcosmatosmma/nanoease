@@ -11,6 +11,7 @@ use App\Domain\Automations\Models\ClassifiedEmail;
 use App\Domain\Automations\Services\EmailResponseComposer;
 use App\Domain\Integrations\Services\EmailSenderManager;
 use App\Domain\Integrations\Services\GmailLabelManager;
+use App\Domain\Tasks\Actions\CreateTaskFromEmailAction;
 use Carbon\Carbon;
 
 final class EmailAutomationExecutor
@@ -21,6 +22,7 @@ final class EmailAutomationExecutor
         private readonly EmailResponseComposer $responseComposer,
         private readonly GmailLabelManager $gmailLabelManager,
         private readonly EmailDataExtractorService $dataExtractor,
+        private readonly CreateTaskFromEmailAction $createTaskAction,
     ) {}
 
     /**
@@ -237,11 +239,38 @@ final class EmailAutomationExecutor
 
     private function executeCreateTask(Automation $automation, array $event, array $params): array
     {
-        return $this->result('executed', 'Ação de criar tarefa não implementada ainda.', [
-            'task_title' => $params['title'] ?? 'Nova tarefa',
-            'task_description' => $params['description'] ?? '',
-            'event' => $event,
-        ]);
+        $action = $automation->actions->where('type', 'tarefa')->first();
+        
+        if (!$action) {
+            return $this->result('error', 'Ação de criar tarefa não encontrada.', []);
+        }
+        
+        $config = $action->config ?? [];
+        
+        if (empty($config['board_list_id'])) {
+            return $this->result('error', 'Lista não configurada na automação.', []);
+        }
+        
+        try {
+            $task = $this->createTaskAction->handle(
+                $event,
+                $config,
+                $automation->team_id,
+                $automation->user_id
+            );
+            
+            return $this->result('executed', 'Tarefa criada com sucesso.', [
+                'task_id' => $task->id,
+                'task_title' => $task->title,
+                'board_list' => $task->boardList->name,
+                'assigned_to' => $task->assignedUser?->name,
+                'event' => $event,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->result('error', 'Lista não encontrada ou sem permissão.', []);
+        } catch (\Exception $e) {
+            return $this->result('error', 'Falha ao criar tarefa: ' . $e->getMessage(), []);
+        }
     }
 
     /**

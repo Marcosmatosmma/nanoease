@@ -722,3 +722,681 @@ Toda atividade do sistema deve poder virar uma tarefa.
 Se algo exige ação humana, deve poder ser representado no Kanban.
 
 📌 Este arquivo deve ser lido antes de escrever código e respeitado durante toda a vida do projeto.
+
+## 19. Organizador de Contratos, Documentos e Vencimentos (com Assistente Jurídico IA)
+
+Este módulo implementa um **sistema centralizado de organização de contratos e documentos jurídicos**, com controle de vencimentos, alertas automáticos e suporte de uma IA especializada em leitura e interpretação contratual.
+
+O objetivo é evitar:
+- contratos esquecidos
+- renovações automáticas indesejadas
+- multas por vencimento
+- falta de visibilidade jurídica
+
+---
+
+## 19.1 Princípio do Módulo
+
+Este módulo atua como um **repositório inteligente de contratos**, integrado ao sistema de tarefas e automações.
+
+Fluxo base:
+> Documento → Interpretação (IA) → Registro → Alerta → Ação
+
+⚠️ O sistema **NÃO substitui um advogado**.  
+Ele organiza informações, gera alertas e auxilia na leitura.
+
+---
+
+## 19.2 Tipos de Documentos Suportados
+
+No MVP, suportar:
+- Contratos (PDF, DOCX)
+- Aditivos contratuais
+- Termos de uso / prestação de serviço
+
+Fontes de entrada:
+- Upload manual
+- E-mail (automação)
+- Formulário externo (opcional futuro)
+
+---
+
+## 19.3 Registro de Contrato
+
+Ao registrar um contrato, o sistema deve armazenar:
+
+- Nome do contrato
+- Tipo de contrato (ex: prestação de serviço, aluguel, SaaS)
+- Partes envolvidas
+- Data de início
+- Data de término / vencimento
+- Renovação automática (sim/não/desconhecido)
+- Valor (se identificado)
+- Status (ativo, vencido, encerrado)
+- Documento original
+
+---
+
+## 19.4 Uso de IA na Leitura do Contrato
+
+A IA deve auxiliar na **extração e interpretação**, nunca tomar decisões jurídicas.
+
+Funções permitidas:
+- Identificar datas importantes
+- Identificar cláusulas de renovação
+- Identificar multas e prazos
+- Resumir o contrato em linguagem simples
+- Sinalizar cláusulas potencialmente sensíveis
+
+⚠️ Regras:
+- IA deve sempre citar o trecho do contrato
+- IA não deve afirmar ilegalidade
+- IA não deve dar parecer jurídico definitivo
+
+Toda IA deve residir no domínio `Domain/AI`.
+
+---
+
+## 19.5 Alertas e Vencimentos
+
+O sistema deve permitir configurar alertas automáticos:
+
+Alertas padrão:
+- X dias antes do vencimento
+- No dia do vencimento
+- Após vencimento (se ainda ativo)
+
+Os alertas devem:
+- Criar tarefas automaticamente
+- Enviar notificações por e-mail
+- Aparecer no Kanban
+
+Exemplo:
+> “Revisar contrato de prestação de serviços – vence em 15 dias”
+
+---
+
+## 19.6 Integração com Sistema de Tarefas
+
+Cada contrato pode gerar tarefas automaticamente:
+- Revisar contrato
+- Renovar contrato
+- Encerrar contrato
+- Negociar reajuste
+
+A tarefa deve conter:
+- Link para o contrato
+- Data de vencimento
+- Origem: contrato
+
+---
+
+## 19.7 Assistente Jurídico IA
+
+O sistema deve oferecer um **Assistente Jurídico IA** treinado para leitura de contratos.
+
+Funcionalidades:
+- Perguntas em linguagem natural:
+  - “Esse contrato tem renovação automática?”
+  - “Existe multa por cancelamento?”
+  - “Quais são os principais riscos?”
+- Resumo executivo do contrato
+- Destaque de cláusulas importantes
+
+⚠️ Aviso obrigatório:
+> “Esta análise não substitui um advogado.”
+
+---
+
+## 19.8 Histórico do Contrato
+
+Cada contrato deve manter histórico automático:
+- upload
+- alterações de status
+- alertas disparados
+- tarefas criadas
+- interações com a IA
+
+O histórico é somente leitura.
+
+---
+
+## 19.9 UX do Módulo
+
+Requisitos de UX:
+- Lista de contratos com status visual
+- Indicadores de vencimento
+- Filtros por tipo, status e data
+- Acesso rápido ao documento
+- Área de perguntas para IA
+
+A experiência deve ser clara para usuários não jurídicos.
+
+---
+
+## 19.10 Regras de Escopo (Importante)
+
+❌ Não implementar no MVP:
+- assinatura digital
+- workflows jurídicos complexos
+- múltiplas versões de contrato
+- parecer jurídico automático
+
+O foco é **organização, alerta e clareza**.
+
+---
+
+## 19.11 Regra Final
+
+Contrato esquecido é risco oculto.
+
+Este módulo existe para garantir que **nenhum contrato vença sem ação**.
+
+## 19.12 Prompt para o agente de IA para ler os contratos
+
+"Você é um **Assistente Jurídico de Apoio**, especializado em leitura e interpretação de contratos.
+
+Seu papel NÃO é substituir um advogado.
+Seu papel é **ajudar o usuário a entender o contrato**, destacando informações importantes, riscos práticos e pontos de atenção.
+
+---
+
+## CONTEXTO FORNECIDO
+Você receberá:
+- Texto completo ou parcial de um contrato
+- Pergunta opcional do usuário sobre o contrato
+
+---
+
+## SUAS RESPONSABILIDADES
+
+1. Ler o contrato com atenção
+2. Identificar informações relevantes de forma objetiva
+3. Responder sempre com base no TEXTO do contrato
+4. Citar trechos relevantes como evidência
+5. Usar linguagem simples e acessível (não jurídica)
+
+---
+
+## O QUE VOCÊ PODE FAZER
+
+✅ Identificar:
+- Datas importantes (início, término, vigência)
+- Cláusulas de renovação automática
+- Multas por cancelamento
+- Prazos de aviso prévio
+- Obrigações principais das partes
+- Valores, reajustes e periodicidade
+- Riscos práticos para o contratante
+
+✅ Resumir:
+- O contrato em poucas linhas
+- As principais obrigações
+- Pontos que exigem atenção
+
+✅ Responder perguntas como:
+- “Esse contrato tem renovação automática?”
+- “Qual o prazo de vigência?”
+- “Existe multa para cancelamento?”
+- “Quais são os principais riscos?”
+- “O que acontece se eu não cumprir?”
+
+---
+
+## O QUE VOCÊ NÃO PODE FAZER (OBRIGATÓRIO)
+
+❌ NÃO afirmar que algo é ilegal
+❌ NÃO dar parecer jurídico definitivo
+❌ NÃO recomendar ações legais
+❌ NÃO inventar informações que não estejam no texto
+❌ NÃO assumir contexto externo ao contrato
+
+Se algo não estiver claro no texto, diga explicitamente:
+> “O contrato não deixa isso claro.”
+
+---
+
+## COMO RESPONDER (FORMATO PADRÃO)
+
+Sempre que possível, siga esta estrutura:
+
+### 📌 Resposta direta
+Explique a resposta de forma clara e curta.
+
+### 📄 Evidência no contrato
+Cite o trecho relevante entre aspas.
+
+### ⚠️ Ponto de atenção (se aplicável)
+Explique riscos ou consequências práticas.
+
+---
+
+## EXEMPLOS DE RESPOSTA
+
+**Pergunta:** Esse contrato tem renovação automática?
+
+**Resposta:**
+📌 **Resposta direta**  
+Sim, o contrato prevê renovação automática.
+
+📄 **Evidência no contrato**  
+“Este contrato será renovado automaticamente por períodos iguais, salvo manifestação contrária de uma das partes com antecedência mínima de 30 dias.”
+
+⚠️ **Ponto de atenção**  
+Caso não haja aviso dentro do prazo, o contrato continuará vigente automaticamente.
+
+---
+
+## RESUMO EXECUTIVO (QUANDO SOLICITADO)
+
+Quando solicitado um resumo do contrato, apresente:
+
+- Tipo de contrato
+- Prazo de vigência
+- Principais obrigações
+- Riscos relevantes
+- Datas críticas
+
+Use linguagem simples e tópicos curtos.
+
+---
+
+## AVISO FINAL (OBRIGATÓRIO EM TODA RESPOSTA)
+
+Finalize sempre com:
+
+> ⚠️ Esta análise é um apoio informativo e não substitui a avaliação de um advogado."
+
+## 19.13 Telas
+Objetivo do UX
+
+Em 2 minutos o usuário consegue:
+	1.	subir um contrato
+	2.	ver vencimento + alertas sugeridos
+	3.	obter um resumo claro e 2–3 riscos
+	4.	criar tarefa “Revisar/renovar” automaticamente
+
+⸻
+
+UX do Módulo Contratos + IA
+
+1) Tela: Lista de Contratos
+
+Propósito: visão rápida do que está vencendo e do que é risco.
+
+Elementos
+	•	Header: Contratos
+	•	Botão primário: Adicionar contrato
+	•	Busca: “Buscar por nome, fornecedor, tag…”
+	•	Filtros (chips):
+	•	Status: Ativo | Vencendo | Vencido | Encerrado
+	•	Tipo: Prestação | Aluguel | SaaS | Outro
+	•	Tabela/lista com cards compactos:
+	•	Nome do contrato
+	•	Parte/fornecedor (se tiver)
+	•	Vencimento (badge: verde/laranja/vermelho)
+	•	Renovação automática (Sim/Não/Indefinido)
+	•	Tags (ex: “SaaS”, “Fornecedor”)
+	•	Ações rápidas: Ver, Perguntar à IA, Criar alerta
+
+Microcopy (importante)
+	•	Badge vencendo: “Vence em X dias”
+	•	Badge vencido: “Vencido há X dias”
+
+⸻
+
+2) Tela: Adicionar Contrato (Wizard curto)
+
+Propósito: reduzir fricção e evitar cadastro manual chato.
+
+Passo 1 — Upload
+	•	Upload PDF/DOCX (drag & drop)
+	•	Campo opcional: Nome do contrato (autopreenche do arquivo)
+	•	Checkbox: “Esse contrato tem dados sensíveis” (apenas para avisos)
+
+Ao fazer upload: inicia análise automática (loading com progress)
+
+Passo 2 — Extração IA (preview + confirmação)
+
+Mostrar um painel com campos preenchidos pela IA (editáveis):
+	•	Tipo do contrato (dropdown)
+	•	Partes envolvidas (texto)
+	•	Data de início
+	•	Data de vencimento
+	•	Renovação automática (Sim/Não/Indefinido)
+	•	Prazo de aviso prévio (se houver)
+	•	Multa de cancelamento (se houver)
+	•	Valor e reajuste (se houver)
+
+⚠️ Cada campo deve ter um botão “ver evidência” que abre o trecho do contrato (modal/drawer):
+	•	“Extraído de: ‘…trecho…’”
+
+Botão: Confirmar e salvar
+Link secundário: “Salvar sem análise” (caso o OCR/texto falhe)
+
+Passo 3 — Alertas
+
+Checklist de alertas sugeridos:
+	•	30 dias antes
+	•	15 dias antes
+	•	7 dias antes
+	•	No dia
+	•	Após vencimento (1 dia depois)
+
+Botão: Salvar alertas
+
+✅ Ao finalizar, oferecer:
+	•	“Criar tarefa de revisão” (checkbox marcado por padrão)
+
+⸻
+
+3) Tela: Detalhe do Contrato
+
+Propósito: clareza, risco e ação.
+
+Layout (3 colunas ou 2 colunas)
+
+Topo
+	•	Título do contrato
+	•	Status + vencimento (badge grande)
+	•	Botões:
+	•	Perguntar à IA
+	•	Criar tarefa
+	•	Configurar alertas
+	•	Download / Ver documento
+
+Seção A — Visão Geral (cards)
+	•	Partes
+	•	Vigência (início → fim)
+	•	Renovação automática
+	•	Aviso prévio
+	•	Multa
+	•	Valor/reajuste
+
+Cada item com ícone “evidência” abrindo trecho do contrato.
+
+Seção B — Resumo IA (curto e útil)
+
+Card “Resumo executivo”
+	•	5 bullets:
+	•	tipo
+	•	vigência
+	•	obrigações principais
+	•	como cancelar
+	•	pontos críticos
+
+Botão “Gerar novamente” (com throttle)
+
+Seção C — Alertas e tarefas
+	•	Lista de alertas configurados (editável)
+	•	Tarefas vinculadas (kanban)
+	•	“Revisar contrato X” (vence em 15 dias)
+	•	“Negociar reajuste” etc.
+
+Seção D — Histórico
+
+Timeline:
+	•	contrato enviado
+	•	análise IA executada
+	•	alertas criados
+	•	tarefas criadas
+	•	alterações
+
+⸻
+
+4) Tela: Assistente Jurídico IA (Chat focado)
+
+Propósito: perguntas rápidas com evidência.
+
+Componentes
+	•	Campo de pergunta (input grande)
+	•	Sugestões rápidas (chips):
+	•	“Tem renovação automática?”
+	•	“Qual multa por cancelamento?”
+	•	“Qual prazo de aviso prévio?”
+	•	“Quais os riscos principais?”
+	•	“Resuma em 5 linhas”
+	•	Resposta em 3 blocos:
+	1.	Resposta direta
+	2.	Evidência (trecho citado)
+	3.	Ponto de atenção
+	•	Aviso fixo no rodapé:
+“Esta análise é informativa e não substitui um advogado.”
+
+Regras de UX
+	•	Sempre mostrar “fonte” (trecho do contrato)
+	•	Botão “Ver no documento” que abre o PDF no trecho (se possível; senão abre página geral)
+
+⸻
+
+5) Tela: Alertas (Central)
+
+Propósito: usuário ver o que vai vencer em breve e agir.
+	•	Lista de alertas futuros agrupados por data
+	•	Ações rápidas:
+	•	“Criar tarefa agora”
+	•	“Adiar alerta”
+	•	“Marcar como resolvido”
+	•	Integração com e-mail:
+	•	“Notificar por e-mail o responsável”
+
+⸻
+
+Integrações com o resto do sistema (muito importante)
+	•	Contratos podem ser criados via:
+	•	Upload manual
+	•	Automação de e-mail (se anexo PDF)
+	•	Formulário externo (V2)
+	•	Alertas sempre geram:
+	•	tarefa no Kanban (opcional mas recomendado)
+	•	notificação e-mail (opcional)
+
+⸻
+
+MVP enxuto (pra você lançar logo)
+
+Inclui:
+	•	Upload + extração IA + evidência
+	•	Lista + detalhe
+	•	Alertas + tarefa automática
+	•	Chat IA com perguntas prontas
+
+Não inclui (ainda):
+	•	versão de contrato
+	•	assinatura digital
+	•	times/permissões avançadas
+	•	OCR pesado (só se necessário)
+
+---
+
+## 19.14 Melhorias Futuras (Roadmap)
+
+Esta seção documenta melhorias planejadas para implementação posterior ao MVP.
+
+### 1. Extração de Texto de PDF (OCR)
+
+**Objetivo**: Extrair automaticamente o texto de documentos PDF escaneados ou com texto não selecionável.
+
+**Tecnologias sugeridas**:
+- **Tesseract OCR** (open-source, multi-idioma)
+- **Google Cloud Vision API** (pago, alta precisão)
+- **Amazon Textract** (pago, específico para documentos)
+
+**Implementação**:
+```php
+// Service: PdfTextExtractionService
+- método: extractFromPdf(UploadedFile $file): string
+- usar spatie/pdf-to-text para PDFs com texto selecionável
+- fallback para OCR se texto não for detectado
+- armazenar em contract_documents.extracted_text
+```
+
+**Integração**:
+- Executar automaticamente após upload
+- Exibir progresso no frontend
+- Permitir re-processar manualmente
+
+---
+
+### 2. Viewer de PDF Embutido
+
+**Objetivo**: Visualizar PDFs diretamente na interface, sem download, com destaque de trechos relevantes.
+
+**Tecnologia**: PDF.js (Mozilla, open-source)
+
+**Implementação**:
+```vue
+// Componente: PdfViewer.vue
+- renderizar PDF página por página
+- zoom, navegação, busca interna
+- destacar trechos citados pela IA
+- sincronizar scroll com citações
+```
+
+**Features**:
+- Preview inline na tela de detalhes
+- Botão "Ver no documento" que salta para página específica
+- Anotações visuais (marcar cláusulas importantes)
+- Download original
+
+---
+
+### 3. Assinatura Digital
+
+**Objetivo**: Permitir assinatura eletrônica de contratos dentro da plataforma.
+
+**Integrações sugeridas**:
+- **DocuSign** (líder global)
+- **ClickSign** (Brasil)
+- **D4Sign** (Brasil)
+
+**Fluxo**:
+1. Usuário envia contrato para assinatura
+2. Define signatários (e-mails)
+3. Plataforma envia via API da integradora
+4. Webhook notifica quando assinado
+5. PDF assinado é anexado automaticamente
+
+**Implementação**:
+```php
+// Service: DigitalSignatureService
+- enviarParaAssinatura(Contract $contract, array $signatarios)
+- webhookAssinaturaConcluida(array $payload)
+- vincularPdfAssinado(Contract $contract, string $pdfUrl)
+```
+
+**Tabela adicional**: `contract_signatures`
+- id, contract_id, signer_email, status, signed_at, external_id
+
+---
+
+### 4. Versionamento de Contratos
+
+**Objetivo**: Manter histórico de versões (aditivos, renovações, alterações).
+
+**Estrutura**:
+```php
+// Tabela: contract_versions
+- id, contract_id, version_number, document_id
+- changes_description, created_by, created_at
+```
+
+**Features**:
+- Criar nova versão ao fazer upload de aditivo
+- Comparar versões (diff visual)
+- Histórico completo de alterações
+- Restaurar versão anterior
+
+**UX**:
+- Timeline de versões na tela de detalhes
+- Badge "Versão 2.0" ao lado do nome
+- Botão "Ver mudanças" que mostra diff
+
+---
+
+### 5. Exportação de Relatórios
+
+**Objetivo**: Gerar relatórios consolidados em Excel e PDF.
+
+**Tipos de relatório**:
+
+1. **Relatório de Vencimentos**
+   - Contratos vencendo em X dias
+   - Agrupado por mês
+   - Gráficos de status
+
+2. **Relatório Financeiro**
+   - Soma de valores por tipo de contrato
+   - Projeção de despesas mensais
+   - Comparativo ano anterior
+
+3. **Relatório de Compliance**
+   - Contratos sem renovação definida
+   - Alertas não tratados
+   - Documentos faltantes
+
+**Implementação**:
+```php
+// Service: ContractReportService
+- exportToExcel(array $filters): BinaryFileResponse
+- exportToPdf(array $filters): BinaryFileResponse
+- generateDashboardData(): array
+```
+
+**Bibliotecas**:
+- **Excel**: `maatwebsite/excel` (Laravel Excel)
+- **PDF**: `barryvdh/laravel-dompdf` ou `spatie/browsershot`
+
+**UX**:
+- Botão "Exportar" na listagem
+- Modal com opções de formato e filtros
+- Download automático ou envio por e-mail
+
+---
+
+### 6. Dashboard de Contratos (Opcional)
+
+**Objetivo**: Visão executiva consolidada.
+
+**Widgets**:
+- Total de contratos ativos
+- Valor total em contratos
+- Contratos vencendo (30, 15, 7 dias)
+- Alertas pendentes
+- Gráfico de vencimentos (próximos 6 meses)
+- Top 5 fornecedores por valor
+
+---
+
+### 7. Notificações Multi-canal (Opcional)
+
+**Objetivo**: Alertas além de e-mail.
+
+**Canais**:
+- E-mail (já implementado)
+- WhatsApp (via Twilio/Evolution API)
+- Slack (webhook)
+- Push notification (navegador)
+
+---
+
+## 19.15 Priorização de Melhorias
+
+**Implementar PRIMEIRO** (impacto alto, esforço médio):
+1. ✅ Extração de texto de PDF (OCR)
+2. ✅ Viewer de PDF embutido
+3. ✅ Exportação de relatórios
+
+**Implementar DEPOIS** (impacto alto, esforço alto):
+4. Assinatura digital
+5. Versionamento de contratos
+
+**Implementar SE NECESSÁRIO** (impacto médio):
+6. Dashboard de contratos
+7. Notificações multi-canal
+
+---
+
+**Regra de Ouro**: Só adicionar feature após validação de uso real do MVP.
+
+## Fim da tela de gestao de contrato

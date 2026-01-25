@@ -9,8 +9,15 @@ use App\Domain\Tasks\Actions\StoreTaskAction;
 use App\Domain\Tasks\Actions\UpdateTaskAction;
 use App\Domain\Tasks\Actions\MoveTaskAction;
 use App\Domain\Tasks\Actions\DeleteTaskAction;
+use App\Domain\Tasks\Actions\ArchiveTaskAction;
+use App\Domain\Tasks\Actions\UnarchiveTaskAction;
+use App\Domain\Tasks\Actions\StoreBoardListAction;
+use App\Domain\Tasks\Actions\UpdateBoardListAction;
+use App\Domain\Tasks\Actions\ReorderBoardListsAction;
 use App\Domain\Tasks\Models\Task;
+use App\Domain\Tasks\Models\Board;
 use App\Domain\Tasks\Models\BoardList;
+use App\Domain\Tasks\Models\TaskLabel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -95,6 +102,7 @@ final class TaskController
             'label_ids' => 'nullable|array',
             'label_ids.*' => 'exists:task_labels,id',
             'is_completed' => 'nullable|boolean',
+            'board_list_id' => 'sometimes|exists:board_lists,id',
         ]);
 
         $action->handle($task, $data);
@@ -144,5 +152,150 @@ final class TaskController
         $action->handle($task);
 
         return Redirect::back()->with('success', 'Tarefa removida!');
+    }
+
+    /**
+     * Adiciona uma etiqueta à tarefa
+     */
+    public function storeLabel(Task $task): RedirectResponse
+    {
+        $user = Auth::user();
+        
+        // Valida que a tarefa pertence ao team do usuário
+        abort_unless($task->team_id === $user->currentTeam->id, 403);
+
+        $data = request()->validate([
+            'name' => 'required|string|max:255',
+            'color' => 'required|string|max:7',
+        ]);
+
+        $label = TaskLabel::firstOrCreate([
+            'team_id' => $user->currentTeam->id,
+            'name' => $data['name'],
+        ], [
+            'color' => $data['color'],
+        ]);
+
+        $task->labels()->syncWithoutDetaching([$label->id]);
+
+        return Redirect::back();
+    }
+
+    /**
+     * Remove uma etiqueta da tarefa
+     */
+    public function destroyLabel(Task $task, TaskLabel $label): RedirectResponse
+    {
+        $user = Auth::user();
+        
+        // Valida que a tarefa pertence ao team do usuário
+        abort_unless($task->team_id === $user->currentTeam->id, 403);
+        
+        // Valida que a etiqueta pertence ao team do usuário
+        abort_unless($label->team_id === $user->currentTeam->id, 403);
+
+        $task->labels()->detach($label->id);
+
+        return Redirect::back();
+    }
+
+    /**
+     * Cria uma nova lista no board
+     */
+    public function storeList(
+        StoreBoardListAction $action,
+        Board $board
+    ): RedirectResponse {
+        $user = Auth::user();
+        
+        // Valida que o board pertence ao team do usuário
+        abort_unless($board->team_id === $user->currentTeam->id, 403);
+
+        $data = request()->validate([
+            'name' => 'required|string|max:255',
+            'color' => 'nullable|string|max:7',
+        ]);
+
+        $action->handle($board, $data);
+
+        return Redirect::back()->with('success', 'Lista criada com sucesso!');
+    }
+
+    /**
+     * Atualiza uma lista existente
+     */
+    public function updateList(
+        UpdateBoardListAction $action,
+        BoardList $boardList
+    ): RedirectResponse {
+        $user = Auth::user();
+        
+        // Valida que a lista pertence ao team do usuário
+        abort_unless($boardList->board->team_id === $user->currentTeam->id, 403);
+
+        $data = request()->validate([
+            'name' => 'sometimes|string|max:255',
+            'color' => 'nullable|string|max:7',
+        ]);
+
+        $action->handle($boardList, $data);
+
+        return Redirect::back()->with('success', 'Lista atualizada!');
+    }
+
+    /**
+     * Reordena as listas do board
+     */
+    public function reorderLists(
+        ReorderBoardListsAction $action,
+        Board $board
+    ): RedirectResponse {
+        $user = Auth::user();
+        
+        // Valida que o board pertence ao team do usuário
+        abort_unless($board->team_id === $user->currentTeam->id, 403);
+
+        $data = request()->validate([
+            'list_ids' => 'required|array',
+            'list_ids.*' => 'exists:board_lists,id',
+        ]);
+
+        $action->handle($board, $data['list_ids']);
+
+        return Redirect::back();
+    }
+
+    /**
+     * Arquiva uma tarefa
+     */
+    public function archive(
+        ArchiveTaskAction $action,
+        Task $task
+    ): RedirectResponse {
+        $user = Auth::user();
+        
+        // Valida que a tarefa pertence ao team do usuário
+        abort_unless($task->team_id === $user->currentTeam->id, 403);
+
+        $action->handle($task);
+
+        return Redirect::back()->with('success', 'Tarefa arquivada!');
+    }
+
+    /**
+     * Desarquiva uma tarefa
+     */
+    public function unarchive(
+        UnarchiveTaskAction $action,
+        Task $task
+    ): RedirectResponse {
+        $user = Auth::user();
+        
+        // Valida que a tarefa pertence ao team do usuário
+        abort_unless($task->team_id === $user->currentTeam->id, 403);
+
+        $action->handle($task);
+
+        return Redirect::back()->with('success', 'Tarefa restaurada!');
     }
 }

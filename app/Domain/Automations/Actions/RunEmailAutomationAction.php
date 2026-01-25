@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Domain\Automations\Actions;
 
 use App\Domain\Automations\Models\Automation;
+use App\Domain\Automations\Models\AutomationAction;
 use App\Domain\Integrations\Services\EmailSenderManager;
+use App\Domain\Tasks\Actions\CreateTaskFromEmailAction;
 use Illuminate\Support\Arr;
 
 final class RunEmailAutomationAction
 {
-    public function __construct(private readonly EmailSenderManager $emailSenderManager)
-    {
+    public function __construct(
+        private readonly EmailSenderManager $emailSenderManager,
+        private readonly CreateTaskFromEmailAction $createTaskAction,
+    ) {
     }
 
     public function handle(Automation $automation, array $email): array
@@ -31,10 +35,19 @@ final class RunEmailAutomationAction
             return $this->result('ignored', 'Evento não suportado.');
         }
 
-        if ($action->type !== 'encaminhar') {
-            return $this->result('ignored', 'Ação não implementada neste teste.');
-        }
+        // Despachar para handler específico por tipo de ação
+        return match ($action->type) {
+            'encaminhar' => $this->handleForwardEmail($automation, $action, $email),
+            'tarefa' => $this->handleCreateTask($automation, $action, $email),
+            default => $this->result('ignored', 'Ação não implementada: ' . $action->type),
+        };
+    }
 
+    /**
+     * Processa ação de encaminhar email
+     */
+    private function handleForwardEmail(Automation $automation, AutomationAction $action, array $email): array
+    {
         $recipients = Arr::wrap(Arr::get($action->config, 'forward_to', []));
         $recipients = array_values(array_filter(array_map('trim', $recipients)));
 
@@ -59,6 +72,33 @@ final class RunEmailAutomationAction
                 'context' => $sendResult['context'] ?? [],
             ],
         );
+    }
+
+    /**
+     * Processa ação de criar tarefa
+     */
+    private function handleCreateTask(Automation $automation, AutomationAction $action, array $email): array
+    {
+        $config = $action->config ?? [];
+        
+        if (empty($config['board_list_id'])) {
+            return $this->result('error', 'Lista não configurada na automação.');
+        }
+        
+        try {
+            $task = $this->createTaskAction->handle($email, $config, $automation->team_id, $automation->user_id);
+            
+            return $this->result('success', 'Tarefa criada com sucesso.', [
+                'task_id' => $task->id,
+                'task_title' => $task->title,
+                'board_list' => $task->boardList->name,
+                'assigned_to' => $task->assignedUser?->name,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->result('error', 'Lista não encontrada ou sem permissão.');
+        } catch (\Exception $e) {
+            return $this->result('error', 'Falha ao criar tarefa: ' . $e->getMessage());
+        }
     }
 
     private function result(string $status, string $message, array $context = []): array

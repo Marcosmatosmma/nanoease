@@ -36,6 +36,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  boards: {
+    type: Array,
+    default: () => [],
+  },
+  teamUsers: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const actions = [
@@ -79,6 +87,12 @@ const simulationError = ref(null)
 const forwardToInput = ref('')
 const replySubject = ref('Re: {subject}')
 const replyBody = ref('')
+const selectedBoardList = ref('')
+const assignToUser = ref('')
+const includeSender = ref(true)
+const includeDate = ref(true)
+const autoDueDate = ref(false)
+const includeEmailBody = ref(false) // Nova opção de privacidade
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 const xsrfToken = document.cookie
   .split('; ')
@@ -103,6 +117,15 @@ if (props.automation) {
     replySubject.value = props.automation.action_config?.reply_subject || 'Re: {subject}'
     replyBody.value = props.automation.action_config?.reply_body || ''
   }
+  
+  if (props.automation.action_type === 'tarefa') {
+    selectedBoardList.value = props.automation.action_config?.board_list_id || ''
+    assignToUser.value = props.automation.action_config?.assigned_to || ''
+    includeSender.value = props.automation.action_config?.include_sender ?? true
+    includeDate.value = props.automation.action_config?.include_date ?? true
+    autoDueDate.value = props.automation.action_config?.auto_due_date ?? false
+    includeEmailBody.value = props.automation.action_config?.include_email_body ?? false
+  }
 }
 
 syncActionConfig()
@@ -119,6 +142,14 @@ watch(
     }
     if (type !== 'organizar') {
       form.gmail_label = ''
+    }
+    if (type !== 'tarefa') {
+      selectedBoardList.value = ''
+      assignToUser.value = ''
+      includeSender.value = true
+      includeDate.value = true
+      autoDueDate.value = false
+      includeEmailBody.value = false
     }
     syncActionConfig()
   },
@@ -145,11 +176,13 @@ function translateError(message) {
   if (message.toLowerCase().includes('forward to')) return 'Informe pelo menos um e-mail para encaminhar.'
   if (message.toLowerCase().includes('reply_body')) return 'Digite o corpo da resposta.'
   if (message.toLowerCase().includes('email')) return 'Informe e-mails válidos separados por vírgula.'
+  if (message.toLowerCase().includes('lista')) return message // Mensagem já está em português
   return message
 }
 
 const forwardToError = computed(() => form.errors['action_config.forward_to'] || form.errors['action_config.forward_to.0'])
 const replyBodyError = computed(() => form.errors['action_config.reply_body'])
+const boardListError = computed(() => form.errors['action_config.board_list_id'])
 
 const selectedTrigger = computed(() => props.triggerTypes.find((t) => t.id === form.trigger_type_id))
 
@@ -204,6 +237,29 @@ function syncActionConfig() {
     }
     return
   }
+  
+  if (form.action_type === 'tarefa') {
+    // Converter valores vazios para null, e valores válidos para int
+    const boardListId = (selectedBoardList.value && selectedBoardList.value !== '' && selectedBoardList.value !== 'null')
+      ? parseInt(selectedBoardList.value, 10)
+      : null
+      
+    const assignedTo = (assignToUser.value && assignToUser.value !== '' && assignToUser.value !== 'null')
+      ? parseInt(assignToUser.value, 10)
+      : null
+    
+    const config = {
+      board_list_id: boardListId,
+      assigned_to: assignedTo,
+      include_sender: includeSender.value,
+      include_date: includeDate.value,
+      auto_due_date: autoDueDate.value,
+      include_email_body: includeEmailBody.value,
+    }
+    
+    form.action_config = config
+    return
+  }
 
   form.action_config = {}
 }
@@ -235,7 +291,14 @@ function submit() {
     }
   }
   
+  // Validação para ação de criar tarefa
+  if (form.action_type === 'tarefa' && (!selectedBoardList.value || selectedBoardList.value === '')) {
+    form.errors['action_config.board_list_id'] = 'Selecione uma lista para criar as tarefas.'
+    return
+  }
+  
   syncActionConfig()
+  
   const url = isEditing.value
     ? route('automations.email-received.store', { automation: props.automation.id })
     : route('automations.email-received.store')
@@ -518,6 +581,100 @@ function deleteAutomation() {
                 <p class="text-xs text-muted-foreground">
                   💡 Use variáveis: {from_name}, {from_email}, {subject}, {date}, {body_preview}
                 </p>
+              </div>
+            </div>
+            
+            <!-- Configuração: Criar Tarefa -->
+            <div v-if="form.action_type === 'tarefa'" class="space-y-4">
+              <div class="space-y-2">
+                <CardTitle class="text-base">5) Configure onde criar a tarefa</CardTitle>
+                <CardDescription>
+                  O cartão será criado automaticamente com os dados do email
+                </CardDescription>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Lista de destino *</label>
+                <select
+                  v-model.number="selectedBoardList"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  @change="syncActionConfig"
+                  required
+                >
+                  <option value="">Selecione uma lista...</option>
+                  <optgroup v-for="board in boards" :key="board.id" :label="board.name">
+                    <option v-for="list in board.lists" :key="list.id" :value="list.id">
+                      {{ list.name }}
+                    </option>
+                  </optgroup>
+                </select>
+                <p v-if="boardListError" class="text-sm text-destructive">
+                  {{ translateError(boardListError) }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  📌 O cartão será criado nesta lista automaticamente
+                </p>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Responsável (opcional)</label>
+                <select
+                  v-model.number="assignToUser"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  @change="syncActionConfig"
+                >
+                  <option value="">Não atribuir</option>
+                  <option v-for="user in teamUsers" :key="user.id" :value="user.id">
+                    {{ user.name }}
+                  </option>
+                </select>
+                <p class="text-xs text-muted-foreground">
+                  👤 Atribua automaticamente a um membro da equipe
+                </p>
+              </div>
+
+              <div class="space-y-3">
+                <label class="text-sm font-medium">Configurações adicionais</label>
+                
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="includeSender"
+                    @change="syncActionConfig"
+                    class="rounded"
+                  />
+                  <span class="text-sm">Incluir remetente na descrição</span>
+                </label>
+                
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="includeDate"
+                    @change="syncActionConfig"
+                    class="rounded"
+                  />
+                  <span class="text-sm">Incluir data de recebimento</span>
+                </label>
+                
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="autoDueDate"
+                    @change="syncActionConfig"
+                    class="rounded"
+                  />
+                  <span class="text-sm">Definir vencimento automático (7 dias)</span>
+                </label>
+                
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="includeEmailBody"
+                    @change="syncActionConfig"
+                    class="rounded"
+                  />
+                  <span class="text-sm">Incluir corpo do email na descrição</span>
+                </label>
               </div>
             </div>
           </CardContent>

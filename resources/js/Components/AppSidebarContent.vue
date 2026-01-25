@@ -38,6 +38,11 @@ const navigationConfig = [
         route: 'tasks.index',
       },
       {
+        name: 'Contratos',
+        icon: 'lucide:file-text',
+        route: 'contracts.index',
+      },
+      {
         name: 'E-mails Organizados',
         icon: 'lucide:inbox',
         route: 'emails.organized',

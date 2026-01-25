@@ -18,6 +18,9 @@ final class StoreEmailAutomationAction
 
     public function handle(User $user, int $triggerTypeId, string $ruleText, string $actionType, array $actionConfig = [], ?int $integrationId = null, ?int $automationId = null, ?string $gmailLabel = null): Automation
     {
+        // Validar configuração específica por tipo de ação
+        $this->validateActionConfig($user, $actionType, $actionConfig);
+        
         return DB::transaction(function () use ($user, $triggerTypeId, $ruleText, $actionType, $actionConfig, $integrationId, $automationId, $gmailLabel) {
             $plan = $this->buildPlanSafely($ruleText, $actionType, $actionConfig);
 
@@ -78,6 +81,53 @@ final class StoreEmailAutomationAction
 
             return $automation->load('actions');
         });
+    }
+
+    private function validateActionConfig(User $user, string $actionType, array $actionConfig): void
+    {
+        // Validação para ação de criar tarefa
+        if ($actionType === 'tarefa') {
+            if (empty($actionConfig['board_list_id'])) {
+                throw new \InvalidArgumentException('Selecione uma lista para criar as tarefas.');
+            }
+            
+            // Validar se a lista pertence ao team do usuário (multi-tenancy)
+            $listExists = \App\Domain\Tasks\Models\BoardList::query()
+                ->where('id', $actionConfig['board_list_id'])
+                ->whereHas('board', function ($query) use ($user) {
+                    $query->where('team_id', $user->currentTeam->id);
+                })
+                ->exists();
+                
+            if (!$listExists) {
+                throw new \InvalidArgumentException('Lista inválida ou sem permissão.');
+            }
+            
+            // Validar assigned_to se fornecido
+            if (!empty($actionConfig['assigned_to'])) {
+                $userExists = $user->currentTeam
+                    ->allUsers()
+                    ->contains('id', $actionConfig['assigned_to']);
+                    
+                if (!$userExists) {
+                    throw new \InvalidArgumentException('Usuário atribuído inválido.');
+                }
+            }
+        }
+        
+        // Validação para ação de encaminhar email
+        if ($actionType === 'encaminhar') {
+            if (empty($actionConfig['forward_to']) || !is_array($actionConfig['forward_to'])) {
+                throw new \InvalidArgumentException('Informe pelo menos um e-mail para encaminhar.');
+            }
+        }
+        
+        // Validação para ação de responder
+        if ($actionType === 'responder') {
+            if (empty($actionConfig['reply_body'])) {
+                throw new \InvalidArgumentException('Digite o corpo da resposta.');
+            }
+        }
     }
 
     private function buildPlanSafely(string $ruleText, string $actionType, array $actionConfig): ?string

@@ -22,6 +22,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/tasks', [TaskController::class, 'index'])
             ->name('tasks.index');
 
+        // Gerenciar listas
+        Route::post('/tasks/boards/{board}/lists', [TaskController::class, 'storeList'])
+            ->name('tasks.lists.store');
+        
+        Route::put('/tasks/lists/{boardList}', [TaskController::class, 'updateList'])
+            ->name('tasks.lists.update');
+
+        Route::post('/tasks/boards/{board}/lists/reorder', [TaskController::class, 'reorderLists'])
+            ->name('tasks.lists.reorder');
+
         // CRUD de tarefas
         Route::post('/tasks/lists/{boardList}', [TaskController::class, 'store'])
             ->name('tasks.store');
@@ -34,4 +44,18 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         
         Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
             ->name('tasks.destroy');
+
+        // Arquivar/Desarquivar tarefas
+        Route::post('/tasks/{task}/archive', [TaskController::class, 'archive'])
+            ->name('tasks.archive');
+        
+        Route::post('/tasks/{task}/unarchive', [TaskController::class, 'unarchive'])
+            ->name('tasks.unarchive');
+
+        // Gerenciar etiquetas
+        Route::post('/tasks/{task}/labels', [TaskController::class, 'storeLabel'])
+            ->name('tasks.labels.store');
+        
+        Route::delete('/tasks/{task}/labels/{label}', [TaskController::class, 'destroyLabel'])
+            ->name('tasks.labels.destroy');
     });

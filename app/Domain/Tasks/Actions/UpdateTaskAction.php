@@ -31,6 +31,7 @@ class UpdateTaskAction
                 'description' => $data['description'] ?? $task->description,
                 'due_date' => $data['due_date'] ?? $task->due_date,
                 'assigned_to' => $data['assigned_to'] ?? $task->assigned_to,
+                'board_list_id' => $data['board_list_id'] ?? $task->board_list_id,
             ]);
 
             // Atualiza labels se fornecidas

@@ -14,6 +14,7 @@ use App\Domain\AI\Controllers\AIAssistantController;
 require app_path('Domain/Automations/Routes/webAutomations.php');
 require app_path('Domain/Integrations/Routes/webIntegrations.php');
 require app_path('Domain/Tasks/Routes/webTasks.php');
+require app_path('Domain/Contracts/Routes/webContracts.php');
 
 Route::get('/', [WelcomeController::class, 'home'])->name('home');
 

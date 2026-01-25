@@ -61,7 +61,10 @@ final class AutomationController extends Controller
         ]);
     }
 
-    public function emailReceived(ListUserIntegrationsAction $listUserIntegrationsAction): Response
+    public function emailReceived(
+        ListUserIntegrationsAction $listUserIntegrationsAction,
+        \App\Domain\Tasks\Actions\ListUserBoardsAction $listUserBoardsAction,
+    ): Response
     {
         $user = Auth::user();
         $integrations = $listUserIntegrationsAction->handle($user);
@@ -77,12 +80,15 @@ final class AutomationController extends Controller
             'hasGmail' => $gmail?->status === 'connected',
             'automation' => null,
             'triggerTypes' => $triggerTypes,
+            'boards' => $listUserBoardsAction->handle($user),
+            'teamUsers' => $user->currentTeam->allUsers(),
         ]);
     }
 
     public function emailReceivedEdit(
         Automation $automation,
         ListUserIntegrationsAction $listUserIntegrationsAction,
+        \App\Domain\Tasks\Actions\ListUserBoardsAction $listUserBoardsAction,
     ): Response {
         $user = Auth::user();
         abort_unless($user && $automation->user_id === $user->id, 403);
@@ -129,6 +135,8 @@ final class AutomationController extends Controller
             ],
             'triggerTypes' => $triggerTypes,
             'executions' => $executions,
+            'boards' => $listUserBoardsAction->handle($user),
+            'teamUsers' => $user->currentTeam->allUsers(),
         ]);
     }
 

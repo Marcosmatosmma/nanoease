@@ -77,7 +77,7 @@ useSeoMetaTags({
             </Breadcrumb>
           </div>
         </header>
-        <main class="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <main class="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden">
           <slot />
         </main>
       </SidebarInset>

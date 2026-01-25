@@ -25,6 +25,8 @@ class Task extends Model
         'assigned_to',
         'title',
         'description',
+        'encrypted_data',
+        'gmail_message_id',
         'due_date',
         'position',
         'source',
@@ -32,14 +34,17 @@ class Task extends Model
         'source_metadata',
         'is_completed',
         'completed_at',
+        'archived_at',
     ];
 
     protected $casts = [
         'due_date' => 'date',
         'position' => 'integer',
         'source_metadata' => 'array',
+        'encrypted_data' => 'encrypted:array', // Laravel criptografa array automaticamente
         'is_completed' => 'boolean',
         'completed_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     /**
@@ -100,5 +105,21 @@ class Task extends Model
         return !$this->is_completed 
             && $this->due_date 
             && $this->due_date->isToday();
+    }
+
+    /**
+     * Verifica se a tarefa está arquivada
+     */
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
+    }
+
+    /**
+     * Scope para filtrar tarefas não arquivadas
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
     }
 }

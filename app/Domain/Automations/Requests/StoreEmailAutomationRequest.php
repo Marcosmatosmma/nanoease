@@ -25,6 +25,12 @@ final class StoreEmailAutomationRequest extends FormRequest
             'action_config.forward_to.*' => ['email:rfc,dns'],
             'action_config.reply_subject' => ['required_if:action_type,responder', 'string', 'max:500'],
             'action_config.reply_body' => ['required_if:action_type,responder', 'string', 'min:1'],
+            'action_config.board_list_id' => ['required_if:action_type,tarefa', 'integer', 'exists:board_lists,id'],
+            'action_config.assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'action_config.include_sender' => ['nullable', 'boolean'],
+            'action_config.include_date' => ['nullable', 'boolean'],
+            'action_config.auto_due_date' => ['nullable', 'boolean'],
+            'action_config.include_email_body' => ['nullable', 'boolean'],
             'gmail_label' => ['nullable', 'required_if:action_type,organizar', 'string', 'max:255'],
             'automation' => ['nullable', 'integer'],
         ];
@@ -56,6 +62,9 @@ final class StoreEmailAutomationRequest extends FormRequest
             'trigger_type_id.exists' => 'Tipo de condição inválido.',
             'action_config.reply_subject.required_if' => 'Informe o assunto da resposta.',
             'action_config.reply_body.required_if' => 'Digite o corpo da resposta.',
+            'action_config.board_list_id.required_if' => 'Selecione uma lista para criar as tarefas.',
+            'action_config.board_list_id.exists' => 'Lista inválida ou não encontrada.',
+            'action_config.assigned_to.exists' => 'Usuário atribuído inválido.',
             'gmail_label.required_if' => 'Informe o nome da label no Gmail.',
         ];
     }

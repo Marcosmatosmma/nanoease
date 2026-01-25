@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Gate;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Symfony\Component\HttpFoundation\Request as HttpFoundationRequest;
 
@@ -59,6 +60,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->configurePrisms();
         $this->configureScribeDocumentation();
         $this->configureRateLimiting();
+        $this->configurePolicies();
     }
 
     /**
@@ -162,5 +164,13 @@ final class AppServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         RateLimiter::for('login-link', fn (Request $request) => $request->email ? Limit::perHour(5)->by($request->email) : Limit::perHour(5)->by($request->ip()));
+    }
+
+    /**
+     * Configure the application's policies.
+     */
+    private function configurePolicies(): void
+    {
+        Gate::policy(\App\Domain\Contracts\Models\Contract::class, \App\Domain\Contracts\Policies\ContractPolicy::class);
     }
 }

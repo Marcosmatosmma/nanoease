@@ -31,7 +31,8 @@ class ListUserBoardsAction
                     $query->orderBy('position');
                 },
                 'lists.tasks' => function ($query) {
-                    $query->with(['assignedUser', 'labels'])
+                    $query->with(['assignedUser', 'labels', 'boardList'])
+                        ->notArchived()
                         ->orderBy('position');
                 },
             ])

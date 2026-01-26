@@ -87,11 +87,33 @@ class CheckContractExpirationsJob implements ShouldQueue
                 // Registrar no histórico
                 $historyService->logAlertFired($contract, $alert->alert_type);
 
+                // Enviar e-mail se configurado
+                $this->trySendEmail($contract, $alert);
+
                 // Criar tarefa automaticamente se houver lista padrão
                 $this->tryCreateTask($contract, $alert, $createTaskAction, $historyService);
 
                 Log::info("Alerta #{$alert->id} disparado para contrato #{$contract->id}");
             }
+        }
+    }
+
+    /**
+     * Tenta enviar e-mail de alerta
+     */
+    private function trySendEmail(Contract $contract, ContractAlert $alert): void
+    {
+        if (!$alert->send_email || !$alert->email_to) {
+            return;
+        }
+
+        try {
+            \Illuminate\Support\Facades\Notification::route('mail', $alert->email_to)
+                ->notify(new \App\Notifications\ContractAlertTriggered($contract, $alert));
+
+            Log::info("E-mail enviado para {$alert->email_to} - Alerta #{$alert->id}");
+        } catch (\Exception $e) {
+            Log::error("Falha ao enviar e-mail para alerta #{$alert->id}: {$e->getMessage()}");
         }
     }
 

@@ -1,33 +1,22 @@
 <template>
   <AppLayout :title="contract.name">
-    <template #header>
+    <div class="space-y-6">
+      <!-- Header com botões -->
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
           {{ contract.name }}
         </h2>
-        <div class="flex gap-2">
-          <Button
-            variant="outline"
-            @click="$inertia.visit(route('contracts.edit', contract.id))"
-          >
-            <Icon icon="lucide:edit" class="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-          <Button
-            variant="destructive"
-            @click="confirmDelete"
-          >
-            <Icon icon="lucide:trash-2" class="h-4 w-4 mr-2" />
-            Excluir
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          @click="$inertia.visit(route('contracts.edit', contract.id))"
+        >
+          <Icon icon="lucide:edit" class="h-4 w-4 mr-2" />
+          Editar
+        </Button>
       </div>
-    </template>
 
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Resumo da IA (acima das tabs se existir) -->
-        <div v-if="contract.ai_summary" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg shadow p-6 mb-6">
+      <!-- Resumo da IA (acima das tabs se existir) -->
+      <div v-if="contract.ai_summary" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg shadow p-6">
           <div class="flex items-start gap-3">
             <Icon icon="lucide:sparkles" class="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
             <div class="flex-1">
@@ -135,6 +124,20 @@
               >
                 <Icon icon="lucide:building-2" class="h-4 w-4 inline-block mr-2" />
                 Dados API
+              </button>
+
+              <!-- Tab: Relatório -->
+              <button
+                @click="activeTab = 'report'"
+                :class="[
+                  'flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
+                  activeTab === 'report'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                ]"
+              >
+                <Icon icon="lucide:bar-chart-3" class="h-4 w-4 inline-block mr-2" />
+                Relatório
               </button>
 
               <!-- Tab: Histórico -->
@@ -368,14 +371,13 @@
 
               <!-- Histórico de Notas Fiscais Emitidas -->
               <div>
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4">
                   <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
                     Notas Fiscais Emitidas
                   </h4>
-                  <Button size="sm" @click="showInvoiceUploadModal = true">
-                    <Icon icon="lucide:upload" class="h-4 w-4 mr-2" />
-                    Nova Nota Fiscal
-                  </Button>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Para adicionar novas notas fiscais, utilize o editor do contrato
+                  </p>
                 </div>
 
                 <div v-if="contract.invoices.length === 0" class="text-center py-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -396,16 +398,16 @@
                             NF {{ invoice.invoice_number || 'S/N' }}
                           </h5>
                           <span
-                            v-if="invoice.is_overdue"
-                            class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            v-if="invoice.is_paid"
+                            class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                           >
-                            Vencida
+                            Pago
                           </span>
                           <span
-                            v-else-if="invoice.is_due_today"
-                            class="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                            v-else
+                            class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
                           >
-                            Vence Hoje
+                            A Pagar
                           </span>
                         </div>
 
@@ -452,13 +454,6 @@
                           <Icon icon="lucide:code" class="h-3 w-3" />
                           XML
                         </a>
-                        <button
-                          @click="confirmDeleteInvoice(invoice.id)"
-                          class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                        >
-                          <Icon icon="lucide:trash-2" class="h-3 w-3" />
-                          Excluir
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -468,23 +463,18 @@
 
             <!-- Tab: Documentos -->
             <div v-if="activeTab === 'documents'">
-              <div class="flex items-center justify-between mb-4">
+              <div class="mb-4">
                 <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Documentos Anexados
                 </h4>
-                <Button size="sm" @click="showUploadModal = true">
-                  <Icon icon="lucide:upload" class="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Para adicionar novos documentos, utilize o editor do contrato
+                </p>
               </div>
 
-              <div v-if="contract.documents.length === 0" class="text-center py-12">
+              <div v-if="contract.documents.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <Icon icon="lucide:file-text" class="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nenhum documento enviado ainda</p>
-                <Button size="sm" @click="showUploadModal = true">
-                  <Icon icon="lucide:upload" class="h-4 w-4 mr-2" />
-                  Enviar Primeiro Documento
-                </Button>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Nenhum documento enviado ainda</p>
               </div>
 
               <div v-else class="space-y-2">
@@ -520,64 +510,106 @@
 
             <!-- Tab: Alertas -->
             <div v-if="activeTab === 'alerts'">
-              <div class="flex items-center justify-between mb-4">
+              <div class="mb-4">
                 <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Alertas Configurados
                 </h4>
-                <Button size="sm" @click="showAlertModal = true">
-                  <Icon icon="lucide:plus" class="h-4 w-4 mr-2" />
-                  Novo Alerta
-                </Button>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Para configurar novos alertas, utilize o editor do contrato
+                </p>
               </div>
 
-              <div v-if="contract.alerts.length === 0" class="text-center py-12">
+              <div v-if="contract.alerts.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <Icon icon="lucide:bell-off" class="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nenhum alerta configurado</p>
-                <Button size="sm" @click="showAlertModal = true">
-                  <Icon icon="lucide:plus" class="h-4 w-4 mr-2" />
-                  Criar Primeiro Alerta
-                </Button>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Nenhum alerta configurado</p>
               </div>
 
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div v-else class="space-y-2">
                 <div
                   v-for="alert in contract.alerts"
                   :key="alert.id"
-                  class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
-                  <div class="flex items-start justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <Icon icon="lucide:bell" class="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                      <span class="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                        {{ getAlertTypeLabel(alert.alert_type) }}
-                      </span>
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <Icon
+                      :icon="alert.is_active ? 'lucide:bell' : 'lucide:bell-off'"
+                      :class="[
+                        'h-6 w-6 flex-shrink-0',
+                        alert.is_active 
+                          ? 'text-orange-600 dark:text-orange-400' 
+                          : 'text-gray-400 dark:text-gray-500'
+                      ]"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {{ getAlertTypeLabel(alert.alert_type, alert.days_before) }}
+                      </p>
+                      <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <span
+                          :class="[
+                            'text-xs px-2 py-0.5 rounded-full',
+                            alert.triggered_at
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : alert.is_active
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                          ]"
+                        >
+                          {{ alert.triggered_at ? 'Disparado' : alert.is_active ? 'Ativo' : 'Inativo' }}
+                        </span>
+                        <span v-if="alert.triggered_at" class="text-xs text-gray-500 dark:text-gray-400">
+                          em {{ alert.triggered_at }}
+                        </span>
+                        <span v-if="alert.task_id" class="text-xs text-blue-600 dark:text-blue-400">
+                          <Icon icon="lucide:check-circle" class="h-3 w-3 inline-block mr-1" />
+                          Tarefa criada
+                        </span>
+                      </div>
                     </div>
-                    <span
-                      class="px-2 py-0.5 text-xs rounded-full"
-                      :class="alert.triggered_at ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'"
-                    >
-                      {{ alert.triggered_at ? 'Disparado' : 'Ativo' }}
-                    </span>
                   </div>
-                  <p v-if="alert.days_before" class="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                    <Icon icon="lucide:calendar" class="h-3 w-3 inline-block mr-1" />
-                    {{ alert.days_before }} dias antes
-                  </p>
-                  <p v-if="alert.triggered_at" class="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                    <Icon icon="lucide:check-circle" class="h-3 w-3 inline-block mr-1" />
-                    Disparado em {{ alert.triggered_at }}
-                  </p>
                 </div>
               </div>
             </div>
 
             <!-- Tab: Comentários -->
             <div v-if="activeTab === 'comments'">
-              <div class="text-center py-12">
-                <Icon icon="lucide:message-square" class="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Funcionalidade de comentários será implementada em breve
+              <div class="mb-4">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Comentários
+                </h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Para adicionar novos comentários, utilize o editor do contrato
                 </p>
+              </div>
+
+              <div v-if="contract.comments.length === 0" class="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <Icon icon="lucide:message-square-off" class="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p class="text-sm text-gray-500 dark:text-gray-400">Nenhum comentário</p>
+              </div>
+
+              <div v-else class="space-y-4">
+                <div
+                  v-for="comment in contract.comments"
+                  :key="comment.id"
+                  class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div class="flex items-start gap-3 mb-2">
+                    <div class="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center flex-shrink-0">
+                      <Icon icon="lucide:user" class="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {{ comment.user.name }}
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                          {{ comment.created_at }}
+                        </p>
+                      </div>
+                      <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ comment.comment }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -593,7 +625,7 @@
                 </p>
               </div>
 
-              <div v-else class="space-y-4">
+              <div v-else class="space-y-6">
                 <div class="flex items-center gap-2 mb-4">
                   <Icon icon="lucide:database" class="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -601,7 +633,317 @@
                   </h4>
                 </div>
 
-                <pre class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg text-xs text-gray-800 dark:text-gray-200 overflow-auto max-h-96">{{ formatJson(contract.invoice_cnpj_api_data) }}</pre>
+                <!-- Dados formatados -->
+                <div class="space-y-6">
+                  <!-- Seção: Dados Principais -->
+                  <div>
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <Icon icon="lucide:building-2" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Dados Principais
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <!-- CNPJ -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          CNPJ
+                        </label>
+                        <input
+                          type="text"
+                          :value="formatCnpjFromApi(contract.invoice_cnpj_api_data)"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Razão Social -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Razão Social
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'razao_social')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Capital Social -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Capital Social
+                        </label>
+                        <input
+                          type="text"
+                          :value="formatCurrency(getApiField(contract.invoice_cnpj_api_data, 'capital_social'), 'BRL')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Responsável Federativo -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Responsável Federativo
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'responsavel_federativo')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Atualizado em -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Última Atualização
+                        </label>
+                        <input
+                          type="text"
+                          :value="formatApiDate(getApiField(contract.invoice_cnpj_api_data, 'atualizado_em'))"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Porte -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Porte da Empresa
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'porte.descricao')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Natureza Jurídica -->
+                      <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Natureza Jurídica
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'natureza_juridica.descricao')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Qualificação do Responsável -->
+                      <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Qualificação do Responsável
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'qualificacao_do_responsavel.descricao')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção: Atividades Econômicas -->
+                  <div v-if="getApiAtividades(contract.invoice_cnpj_api_data).principal || getApiAtividades(contract.invoice_cnpj_api_data).secundarias.length > 0">
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <Icon icon="lucide:briefcase" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Atividades Econômicas
+                    </h5>
+                    <div class="space-y-3">
+                      <!-- Atividade Principal -->
+                      <div v-if="getApiAtividades(contract.invoice_cnpj_api_data).principal">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Atividade Principal
+                        </label>
+                        <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ getApiAtividades(contract.invoice_cnpj_api_data).principal.subclasse }} - {{ getApiAtividades(contract.invoice_cnpj_api_data).principal.descricao }}
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Atividades Secundárias -->
+                      <div v-if="getApiAtividades(contract.invoice_cnpj_api_data).secundarias.length > 0">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Atividades Secundárias
+                        </label>
+                        <div class="space-y-2">
+                          <div
+                            v-for="(atividade, index) in getApiAtividades(contract.invoice_cnpj_api_data).secundarias"
+                            :key="index"
+                            class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
+                          >
+                            <p class="text-sm text-gray-900 dark:text-gray-100">
+                              {{ atividade.subclasse }} - {{ atividade.descricao }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção: Endereço -->
+                  <div v-if="getApiField(contract.invoice_cnpj_api_data, 'estabelecimento') !== '-'">
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <Icon icon="lucide:map-pin" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Endereço
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <!-- Tipo e Logradouro -->
+                      <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Logradouro
+                        </label>
+                        <input
+                          type="text"
+                          :value="`${getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.tipo_logradouro')} ${getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.logradouro')}, ${getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.numero')}`"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Complemento -->
+                      <div v-if="getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.complemento') !== '-'">
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Complemento
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.complemento')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Bairro -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Bairro
+                        </label>
+                        <input
+                          type="text"
+                          :value="getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.bairro')"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- CEP -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          CEP
+                        </label>
+                        <input
+                          type="text"
+                          :value="formatCep(getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.cep'))"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      <!-- Cidade/UF -->
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Cidade / UF
+                        </label>
+                        <input
+                          type="text"
+                          :value="`${getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.cidade.nome')} - ${getApiField(contract.invoice_cnpj_api_data, 'estabelecimento.estado.sigla')}`"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção: Contatos -->
+                  <div v-if="getApiContatos(contract.invoice_cnpj_api_data).length > 0">
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <Icon icon="lucide:phone" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Contatos
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div
+                        v-for="(contato, index) in getApiContatos(contract.invoice_cnpj_api_data)"
+                        :key="index"
+                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
+                      >
+                        <Icon :icon="contato.icon" class="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <div>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">{{ contato.tipo }}</p>
+                          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ contato.valor }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção: Inscrições -->
+                  <div v-if="getApiInscricoes(contract.invoice_cnpj_api_data).length > 0">
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <Icon icon="lucide:file-text" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Inscrições
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        v-for="(inscricao, index) in getApiInscricoes(contract.invoice_cnpj_api_data)"
+                        :key="index"
+                      >
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {{ inscricao.tipo }}
+                        </label>
+                        <input
+                          type="text"
+                          :value="inscricao.numero"
+                          readonly
+                          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção: Sócios -->
+                  <div v-if="getApiSocios(contract.invoice_cnpj_api_data).length > 0">
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <Icon icon="lucide:users" class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Sócios e Administradores
+                    </h5>
+                    <div class="space-y-2">
+                      <div
+                        v-for="(socio, index) in getApiSocios(contract.invoice_cnpj_api_data)"
+                        :key="index"
+                        class="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600"
+                      >
+                        <Icon icon="lucide:user" class="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ socio.nome }}
+                          </p>
+                          <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                            <span>{{ socio.tipo }}</span>
+                            <span v-if="socio.cpf_cnpj_socio">CPF/CNPJ: {{ formatCpfCnpj(socio.cpf_cnpj_socio) }}</span>
+                            <span v-if="socio.qualificacao">{{ socio.qualificacao }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- JSON Completo (Collapsible) -->
+                  <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <details class="group">
+                      <summary class="cursor-pointer flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                        <Icon icon="lucide:chevron-right" class="h-4 w-4 transition-transform group-open:rotate-90" />
+                        Ver JSON completo da API
+                      </summary>
+                      <pre class="mt-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg text-xs text-gray-800 dark:text-gray-200 overflow-auto max-h-96 border border-gray-200 dark:border-gray-700">{{ formatJson(contract.invoice_cnpj_api_data) }}</pre>
+                    </details>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -627,166 +969,127 @@
                 </div>
               </div>
             </div>
+
+            <!-- Tab: Relatório -->
+            <div v-if="activeTab === 'report'">
+              <!-- Indicadores Resumidos -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Card: Valor do Contrato -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Valor do Contrato
+                  </span>
+                  <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {{ formatCurrency(report.financial.contract_amount) }}
+                  </p>
+                </div>
+
+                <!-- Card: Saldo Liquidado -->
+                <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <span class="text-xs font-medium text-green-600 dark:text-green-400">
+                    Saldo Liquidado
+                  </span>
+                  <p class="mt-1 text-sm font-medium text-green-900 dark:text-green-100">
+                    {{ formatCurrency(report.financial.total_paid) }}
+                  </p>
+                  <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                    {{ report.financial.liquidated_percentage.toFixed(1) }}%
+                  </p>
+                </div>
+
+                <!-- Card: Saldo a Liquidar -->
+                <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                  <span class="text-xs font-medium text-amber-600 dark:text-amber-400">
+                    Saldo a Liquidar
+                  </span>
+                  <p class="mt-1 text-sm font-medium text-amber-900 dark:text-amber-100">
+                    {{ formatCurrency(report.financial.remaining_amount) }}
+                  </p>
+                  <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    {{ (100 - report.financial.liquidated_percentage).toFixed(1) }}%
+                  </p>
+                </div>
+
+                <!-- Card: Tempo Restante -->
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <span class="text-xs font-medium text-blue-600 dark:text-blue-400">
+                    {{ report.time.is_expired ? 'Contrato Expirado' : 'Tempo Restante' }}
+                  </span>
+                  <p class="mt-1 text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {{ Math.round(report.time.remaining_days) }} dias
+                  </p>
+                  <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    {{ (100 - report.time.time_elapsed_percentage).toFixed(1) }}%
+                  </p>
+                </div>
+              </div>
+
+              <!-- Gráficos -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Gráfico: Progresso de Tempo -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                    Progresso de Tempo
+                  </h4>
+                  <div class="h-40 flex items-center justify-center">
+                    <DoughnutChart :data="timeChartData" />
+                  </div>
+                  <p class="mt-3 text-center text-xs text-gray-600 dark:text-gray-400">
+                    {{ Math.round(report.time.elapsed_days) }} de {{ Math.round(report.time.total_days) }} dias
+                  </p>
+                </div>
+
+                <!-- Gráfico: Notas Fiscais -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                    Notas Fiscais
+                  </h4>
+                  <div class="h-40 flex items-center justify-center">
+                    <DoughnutChart :data="invoicesChartData" />
+                  </div>
+                  <p class="mt-3 text-center text-xs text-gray-600 dark:text-gray-400">
+                    {{ report.invoices.paid }} de {{ report.invoices.total }} pagas
+                  </p>
+                </div>
+
+                <!-- Gráfico: Execução Financeira (Barra Vertical) -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                    Execução Financeira
+                  </h4>
+                  <div class="h-40">
+                    <BarChart :data="financialChartData" />
+                  </div>
+                  <div class="mt-3 space-y-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Liquidado</span>
+                      </div>
+                      <span class="text-gray-900 dark:text-gray-100 font-medium">{{ formatCurrency(report.financial.total_paid) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <div class="w-2 h-2 bg-amber-500 rounded-full mr-1"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Pendente</span>
+                      </div>
+                      <span class="text-gray-900 dark:text-gray-100 font-medium">{{ formatCurrency(report.financial.pending_payment) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <div class="w-2 h-2 bg-gray-300 rounded-full mr-1"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Disponível</span>
+                      </div>
+                      <span class="text-gray-900 dark:text-gray-100 font-medium">{{ formatCurrency(Math.max(0, report.financial.remaining_amount - report.financial.pending_payment)) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Modal de Upload -->
-    <div
-      v-if="showUploadModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showUploadModal = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Upload de Documento
-        </h3>
-        <form @submit.prevent="uploadDocument">
-          <input
-            ref="fileInput"
-            type="file"
-            accept=".pdf,.doc,.docx"
-            @change="handleFileChange"
-            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          <div class="flex justify-end gap-2 mt-4">
-            <Button type="button" variant="outline" @click="showUploadModal = false">
-              Cancelar
-            </Button>
-            <Button type="submit" :disabled="!selectedFile || uploadingFile">
-              <Icon
-                v-if="uploadingFile"
-                icon="lucide:loader-2"
-                class="h-4 w-4 mr-2 animate-spin"
-              />
-              Enviar
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal de Upload de Nota Fiscal -->
-    <div
-      v-if="showInvoiceUploadModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showInvoiceUploadModal = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Upload de Nota Fiscal
-        </h3>
-        <form @submit.prevent="uploadInvoice" class="space-y-4">
-          <!-- Aviso -->
-          <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-            <p class="text-sm text-blue-800 dark:text-blue-200">
-              <Icon icon="lucide:info" class="h-4 w-4 inline-block mr-1" />
-              Envie pelo menos um arquivo (PDF ou XML). O XML permite extração automática dos dados.
-            </p>
-          </div>
-
-          <!-- Arquivos -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                PDF da Nota Fiscal
-              </label>
-              <input
-                ref="pdfFileInput"
-                type="file"
-                accept=".pdf"
-                @change="handlePdfChange"
-                :disabled="extractingPdfData"
-                class="block w-full text-sm text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
-              />
-              <p v-if="extractingPdfData" class="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                <Icon icon="lucide:loader-2" class="h-3 w-3 inline-block mr-1 animate-spin" />
-                Extraindo dados com IA...
-              </p>
-              <p v-else-if="selectedPdfFile" class="mt-1 text-xs text-green-600 dark:text-green-400">
-                ✓ {{ selectedPdfFile.name }}
-              </p>
-              <p v-else class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Os dados serão extraídos automaticamente com IA
-              </p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                XML da Nota Fiscal
-              </label>
-              <input
-                ref="xmlFileInput"
-                type="file"
-                accept=".xml"
-                @change="handleXmlChange"
-                class="block w-full text-sm text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-              />
-              <p v-if="!selectedXmlFile" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Os dados serão extraídos automaticamente do XML
-              </p>
-              <p v-else class="mt-1 text-xs text-green-600 dark:text-green-400">
-                ✓ {{ selectedXmlFile.name }} - Dados extraídos
-              </p>
-            </div>
-          </div>
-
-          <!-- Dados da NF -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Número da NF
-              </label>
-              <Input v-model="invoiceForm.invoice_number" placeholder="Ex: 123456" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Data de Emissão
-              </label>
-              <Input v-model="invoiceForm.invoice_date" type="date" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Data de Vencimento
-              </label>
-              <Input v-model="invoiceForm.due_date" type="date" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Valor
-              </label>
-              <Input v-model="invoiceForm.amount" type="number" step="0.01" placeholder="0.00" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Descrição/Observação (opcional)
-            </label>
-            <textarea
-              v-model="invoiceForm.description"
-              rows="3"
-              placeholder="Observações sobre esta nota fiscal..."
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            ></textarea>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button type="button" variant="outline" @click="cancelInvoiceUpload">
-              Cancelar
-            </Button>
-            <Button type="submit" :disabled="uploadingInvoice || (!selectedPdfFile && !selectedXmlFile)">
-              <Icon
-                v-if="uploadingInvoice"
-                icon="lucide:loader-2"
-                class="h-4 w-4 mr-2 animate-spin"
-              />
-              Enviar Nota Fiscal
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
   </AppLayout>
 </template>
 
@@ -797,30 +1100,16 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
 import { Icon } from '@iconify/vue'
+import DoughnutChart from '@/components/charts/DoughnutChart.vue'
+import BarChart from '@/components/charts/BarChart.vue'
 
 const props = defineProps({
   contract: Object,
+  report: Object,
 })
 
 const activeTab = ref('info')
-const showUploadModal = ref(false)
 const showAlertModal = ref(false)
-const selectedFile = ref(null)
-const uploadingFile = ref(false)
-
-// Notas Fiscais
-const showInvoiceUploadModal = ref(false)
-const selectedPdfFile = ref(null)
-const selectedXmlFile = ref(null)
-const uploadingInvoice = ref(false)
-const extractingPdfData = ref(false)
-const invoiceForm = ref({
-  invoice_number: '',
-  invoice_date: '',
-  due_date: '',
-  amount: '',
-  description: '',
-})
 
 // Verifica se há dados de NF preenchidos
 const hasInvoiceData = computed(() => {
@@ -857,7 +1146,11 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const getAlertTypeLabel = (type) => {
+const getAlertTypeLabel = (type, daysBefore = null) => {
+  if (type === 'before_expiration' && daysBefore) {
+    return `${daysBefore} dias antes do vencimento`
+  }
+  
   const labels = {
     'before_expiration': 'Antes do vencimento',
     'on_expiration': 'No dia do vencimento',
@@ -899,224 +1192,251 @@ const formatCpfCnpj = (value) => {
   return value
 }
 
-const formatJson = (data) => {
-  if (!data) return ''
-  try {
-    const parsed = typeof data === 'string' ? JSON.parse(data) : data
-    return JSON.stringify(parsed, null, 2)
-  } catch (e) {
-    return data
-  }
-}
-
-const handleFileChange = (event) => {
-  selectedFile.value = event.target.files[0]
-}
-
-const uploadDocument = () => {
-  if (!selectedFile.value) return
-
-  uploadingFile.value = true
-  const formData = new FormData()
-  formData.append('document', selectedFile.value)
-
-  router.post(route('contracts.documents.upload', props.contract.id), formData, {
-    onSuccess: () => {
-      showUploadModal.value = false
-      selectedFile.value = null
-      uploadingFile.value = false
-    },
-    onError: () => {
-      uploadingFile.value = false
-    },
-  })
-}
-
 const confirmDelete = () => {
   if (confirm(`Tem certeza que deseja excluir este contrato?\n\nEsta ação não pode ser desfeita.`)) {
     router.delete(route('contracts.destroy', props.contract.id))
   }
 }
 
-// Notas Fiscais
-const handlePdfChange = async (event) => {
-  const file = event.target.files[0]
-  selectedPdfFile.value = file
-  
-  if (!file) return
-  
-  // Tentar extrair dados do PDF com IA
-  extractingPdfData.value = true
+const formatJson = (data) => {
+  if (!data) return 'Nenhum dado disponível'
   
   try {
-    const formData = new FormData()
-    formData.append('pdf_file', file)
+    // Se já for string, tenta fazer parse
+    const obj = typeof data === 'string' ? JSON.parse(data) : data
+    return JSON.stringify(obj, null, 2)
+  } catch (e) {
+    return typeof data === 'string' ? data : JSON.stringify(data, null, 2)
+  }
+}
+
+// Funções para extrair dados da API CNPJ
+const getApiField = (data, path) => {
+  if (!data) return '-'
+  
+  try {
+    const obj = typeof data === 'string' ? JSON.parse(data) : data
+    const keys = path.split('.')
+    let value = obj
     
-    const response = await fetch(route('contracts.extract-invoice-pdf'), {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-        'Accept': 'application/json',
-      },
+    for (const key of keys) {
+      value = value?.[key]
+      if (value === undefined || value === null) return '-'
+    }
+    
+    return value || '-'
+  } catch (e) {
+    return '-'
+  }
+}
+
+const formatCnpjFromApi = (data) => {
+  const cnpj = getApiField(data, 'cnpj_raiz')
+  if (cnpj === '-') return '-'
+  return formatCpfCnpj(cnpj)
+}
+
+const formatApiDate = (dateString) => {
+  if (!dateString || dateString === '-') return '-'
+  
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })
-    
-    if (!response.ok) {
-      console.warn('Erro ao extrair dados do PDF')
-      return
-    }
-    
-    const result = await response.json()
-    
-    if (result.success && result.data) {
-      const data = result.data
-      
-      // Preencher campos se encontrou dados
-      if (data.numero) {
-        invoiceForm.value.invoice_number = data.numero
-      }
-      
-      if (data.data_emissao) {
-        invoiceForm.value.invoice_date = data.data_emissao
-      }
-      
-      if (data.valor_total) {
-        invoiceForm.value.amount = data.valor_total
-      }
-      
-      if (data.data_vencimento) {
-        invoiceForm.value.due_date = data.data_vencimento
-      }
-      
-      console.log('Dados extraídos do PDF com IA:', data)
-    }
-  } catch (error) {
-    console.error('Erro ao extrair dados do PDF:', error)
-  } finally {
-    extractingPdfData.value = false
+  } catch (e) {
+    return dateString
   }
 }
 
-const handleXmlChange = async (event) => {
-  const file = event.target.files[0]
-  selectedXmlFile.value = file
+const getApiSocios = (data) => {
+  if (!data) return []
   
-  if (!file) return
-  
-  // Tentar extrair dados do XML automaticamente
   try {
-    const text = await file.text()
-    const parser = new DOMParser()
-    const xmlDoc = parser.parseFromString(text, 'text/xml')
+    const obj = typeof data === 'string' ? JSON.parse(data) : data
+    const socios = obj?.socios || []
     
-    // Verificar se há erro de parsing
-    const parserError = xmlDoc.querySelector('parsererror')
-    if (parserError) {
-      console.warn('Erro ao fazer parse do XML')
-      return
-    }
-    
-    // Tentar extrair dados de NF-e (produto)
-    let numero = xmlDoc.querySelector('nNF')?.textContent
-    let dataEmissao = xmlDoc.querySelector('dhEmi, dEmi')?.textContent
-    let valor = xmlDoc.querySelector('vNF')?.textContent
-    let dataVencimento = null
-    
-    // Se não encontrou, tentar NFS-e (serviço)
-    if (!numero) {
-      numero = xmlDoc.querySelector('Numero, NumeroNfse')?.textContent
-    }
-    if (!dataEmissao) {
-      dataEmissao = xmlDoc.querySelector('DataEmissao, DtEmi')?.textContent
-    }
-    if (!valor) {
-      valor = xmlDoc.querySelector('ValorServicos, ValorTotal, Valor, ValorLiquidoNfse')?.textContent
-    }
-    
-    // Tentar extrair data de vencimento de InformacoesComplementares (campo texto livre)
-    const infosComplementares = xmlDoc.querySelector('InformacoesComplementares')?.textContent
-    if (infosComplementares) {
-      // Procurar por padrões de data: VENCIMENTO: DD/MM/YYYY
-      const vencimentoMatch = infosComplementares.match(/VENCIMENTO:\s*(\d{2})\/(\d{2})\/(\d{4})/i)
-      if (vencimentoMatch) {
-        const [, dia, mes, ano] = vencimentoMatch
-        dataVencimento = `${ano}-${mes}-${dia}`
-      }
-    }
-    
-    // Preencher campos se encontrou dados
-    if (numero) {
-      invoiceForm.value.invoice_number = numero
-    }
-    
-    if (dataEmissao) {
-      // Formatar data para YYYY-MM-DD
-      let formattedDate = dataEmissao.substring(0, 10)
-      invoiceForm.value.invoice_date = formattedDate
-    }
-    
-    if (valor) {
-      invoiceForm.value.amount = parseFloat(valor).toFixed(2)
-    }
-    
-    if (dataVencimento) {
-      invoiceForm.value.due_date = dataVencimento
-    }
-    
-    console.log('Dados extraídos do XML:', { numero, dataEmissao, valor, dataVencimento })
-  } catch (error) {
-    console.error('Erro ao extrair dados do XML:', error)
+    return socios.map(socio => ({
+      nome: socio.nome || 'Não informado',
+      tipo: socio.tipo || 'Pessoa Jurídica',
+      cpf_cnpj_socio: socio.cpf_cnpj_socio || '',
+      qualificacao: socio.qualificacao_socio?.descricao || ''
+    }))
+  } catch (e) {
+    return []
   }
 }
 
-const cancelInvoiceUpload = () => {
-  showInvoiceUploadModal.value = false
-  selectedPdfFile.value = null
-  selectedXmlFile.value = null
-  invoiceForm.value = {
-    invoice_number: '',
-    invoice_date: '',
-    due_date: '',
-    amount: '',
-    description: '',
-  }
-}
-
-const uploadInvoice = () => {
-  if (!selectedPdfFile.value && !selectedXmlFile.value) return
-
-  uploadingInvoice.value = true
-  const formData = new FormData()
+const getApiAtividades = (data) => {
+  if (!data) return { principal: null, secundarias: [] }
   
-  if (selectedPdfFile.value) {
-    formData.append('pdf_file', selectedPdfFile.value)
+  try {
+    const obj = typeof data === 'string' ? JSON.parse(data) : data
+    const estabelecimento = obj?.estabelecimento || {}
+    
+    return {
+      principal: estabelecimento.atividade_principal ? {
+        subclasse: estabelecimento.atividade_principal.subclasse || '',
+        descricao: estabelecimento.atividade_principal.descricao || ''
+      } : null,
+      secundarias: (estabelecimento.atividades_secundarias || []).map(ativ => ({
+        subclasse: ativ.subclasse || '',
+        descricao: ativ.descricao || ''
+      }))
+    }
+  } catch (e) {
+    return { principal: null, secundarias: [] }
   }
-  if (selectedXmlFile.value) {
-    formData.append('xml_file', selectedXmlFile.value)
+}
+
+const getApiContatos = (data) => {
+  if (!data) return []
+  
+  try {
+    const obj = typeof data === 'string' ? JSON.parse(data) : data
+    const estabelecimento = obj?.estabelecimento || {}
+    const contatos = []
+    
+    // Telefone 1
+    if (estabelecimento.ddd1 && estabelecimento.telefone1) {
+      contatos.push({
+        tipo: 'Telefone',
+        valor: `(${estabelecimento.ddd1}) ${estabelecimento.telefone1}`,
+        icon: 'lucide:phone'
+      })
+    }
+    
+    // Telefone 2
+    if (estabelecimento.ddd2 && estabelecimento.telefone2) {
+      contatos.push({
+        tipo: 'Telefone 2',
+        valor: `(${estabelecimento.ddd2}) ${estabelecimento.telefone2}`,
+        icon: 'lucide:phone'
+      })
+    }
+    
+    // Fax
+    if (estabelecimento.ddd_fax && estabelecimento.fax) {
+      contatos.push({
+        tipo: 'Fax',
+        valor: `(${estabelecimento.ddd_fax}) ${estabelecimento.fax}`,
+        icon: 'lucide:printer'
+      })
+    }
+    
+    // Email
+    if (estabelecimento.email) {
+      contatos.push({
+        tipo: 'E-mail',
+        valor: estabelecimento.email,
+        icon: 'lucide:mail'
+      })
+    }
+    
+    return contatos
+  } catch (e) {
+    return []
+  }
+}
+
+const getApiInscricoes = (data) => {
+  if (!data) return []
+  
+  try {
+    const obj = typeof data === 'string' ? JSON.parse(data) : data
+    const estabelecimento = obj?.estabelecimento || {}
+    const inscricoes = []
+    
+    // Inscrição Estadual
+    if (estabelecimento.inscricoes_estaduais && estabelecimento.inscricoes_estaduais.length > 0) {
+      estabelecimento.inscricoes_estaduais.forEach(insc => {
+        if (insc.inscricao_estadual) {
+          inscricoes.push({
+            tipo: `Inscrição Estadual ${insc.estado?.sigla || ''}`.trim(),
+            numero: insc.inscricao_estadual
+          })
+        }
+      })
+    }
+    
+    return inscricoes
+  } catch (e) {
+    return []
+  }
+}
+
+const formatCep = (cep) => {
+  if (!cep || cep === '-') return '-'
+  
+  // Remove tudo que não é dígito
+  const numbers = cep.replace(/\D/g, '')
+  
+  // Formata: 00000-000
+  if (numbers.length === 8) {
+    return numbers.replace(/(\d{5})(\d{3})/, '$1-$2')
   }
   
-  // Dados manuais
-  if (invoiceForm.value.invoice_number) formData.append('invoice_number', invoiceForm.value.invoice_number)
-  if (invoiceForm.value.invoice_date) formData.append('invoice_date', invoiceForm.value.invoice_date)
-  if (invoiceForm.value.due_date) formData.append('due_date', invoiceForm.value.due_date)
-  if (invoiceForm.value.amount) formData.append('amount', invoiceForm.value.amount)
-  if (invoiceForm.value.description) formData.append('description', invoiceForm.value.description)
-
-  router.post(route('contracts.invoices.upload', props.contract.id), formData, {
-    onSuccess: () => {
-      cancelInvoiceUpload()
-      uploadingInvoice.value = false
-    },
-    onError: () => {
-      uploadingInvoice.value = false
-    },
-  })
+  return cep
 }
 
-const confirmDeleteInvoice = (invoiceId) => {
-  if (confirm('Tem certeza que deseja excluir esta nota fiscal?\n\nEsta ação não pode ser desfeita.')) {
-    router.delete(route('invoices.destroy', invoiceId))
+// Computed properties para gráficos do relatório
+const timeChartData = computed(() => ({
+  labels: ['Tempo Decorrido', 'Tempo Restante'],
+  datasets: [{
+    data: [
+      props.report.time.elapsed_days,
+      props.report.time.remaining_days,
+    ],
+    backgroundColor: [
+      'rgb(34, 197, 94)', // green-500
+      'rgb(229, 231, 235)', // gray-200
+    ],
+    borderWidth: 0,
+  }],
+}))
+
+const invoicesChartData = computed(() => ({
+  labels: ['Notas Pagas', 'Notas a Pagar'],
+  datasets: [{
+    data: [
+      props.report.invoices.paid,
+      props.report.invoices.unpaid,
+    ],
+    backgroundColor: [
+      'rgb(34, 197, 94)', // green-500
+      'rgb(251, 191, 36)', // amber-400
+    ],
+    borderWidth: 0,
+  }],
+}))
+
+const financialChartData = computed(() => {
+  const available = Math.max(0, props.report.financial.remaining_amount - props.report.financial.pending_payment)
+  
+  return {
+    labels: ['Saldo do Contrato'],
+    datasets: [
+      {
+        label: 'Liquidado',
+        data: [props.report.financial.total_paid],
+        backgroundColor: 'rgb(34, 197, 94)', // green-500
+      },
+      {
+        label: 'Pendente de Pagamento',
+        data: [props.report.financial.pending_payment],
+        backgroundColor: 'rgb(251, 191, 36)', // amber-400
+      },
+      {
+        label: 'Disponível',
+        data: [available],
+        backgroundColor: 'rgb(229, 231, 235)', // gray-200
+      },
+    ],
   }
-}
+})
 
 </script>

@@ -1,171 +1,10 @@
-<template>
-  <AppLayout title="Contratos">
-    <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-          Contratos
-        </h2>
-        <Button @click="$inertia.visit(route('contracts.create'))">
-          <Icon icon="lucide:plus" class="h-4 w-4 mr-2" />
-          Novo Contrato
-        </Button>
-      </div>
-    </template>
-
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Filtros -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <!-- Busca -->
-            <div class="md:col-span-2">
-              <div class="relative">
-                <Icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  v-model="filters.search"
-                  type="text"
-                  placeholder="Buscar por nome ou tipo..."
-                  @input="debouncedFilter"
-                  class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <!-- Status -->
-            <select
-              v-model="filters.status"
-              @change="applyFilters"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="todos">Todos os status</option>
-              <option value="ativo">Ativo</option>
-              <option value="vencido">Vencido</option>
-              <option value="encerrado">Encerrado</option>
-            </select>
-
-            <!-- Tipo -->
-            <input
-              v-model="filters.type"
-              type="text"
-              placeholder="Filtrar por tipo..."
-              @input="debouncedFilter"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        <!-- Lista de Contratos -->
-        <div v-if="contracts.length === 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-          <Icon icon="lucide:file-text" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Nenhum contrato encontrado
-          </h3>
-          <p class="text-gray-500 dark:text-gray-400 mb-4">
-            Comece criando seu primeiro contrato
-          </p>
-          <Button @click="$inertia.visit(route('contracts.create'))">
-            <Icon icon="lucide:plus" class="h-4 w-4 mr-2" />
-            Criar Contrato
-          </Button>
-        </div>
-
-        <div v-else class="space-y-4">
-          <div
-            v-for="contract in contracts"
-            :key="contract.id"
-            class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
-            @click="$inertia.visit(route('contracts.show', contract.id))"
-          >
-            <div class="p-6">
-              <div class="flex items-start justify-between">
-                <!-- Informações principais -->
-                <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-2">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {{ contract.name }}
-                    </h3>
-
-                    <!-- Badge de Status -->
-                    <span
-                      class="px-2 py-1 text-xs font-medium rounded-full"
-                      :class="getStatusClass(contract)"
-                    >
-                      {{ getStatusLabel(contract) }}
-                    </span>
-                  </div>
-
-                  <!-- Detalhes -->
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div v-if="contract.contract_type">
-                      <span class="font-medium">Tipo:</span>
-                      {{ contract.contract_type }}
-                    </div>
-
-                    <div v-if="contract.end_date">
-                      <span class="font-medium">Vencimento:</span>
-                      {{ formatDate(contract.end_date) }}
-                    </div>
-
-                    <div v-if="contract.amount">
-                      <span class="font-medium">Valor:</span>
-                      {{ formatCurrency(contract.amount, contract.currency) }}
-                    </div>
-
-                    <div v-if="contract.auto_renewal !== null">
-                      <span class="font-medium">Renovação:</span>
-                      {{ contract.auto_renewal ? 'Automática' : 'Manual' }}
-                    </div>
-                  </div>
-
-                  <!-- Meta informações -->
-                  <div class="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                    <span>
-                      <Icon icon="lucide:user" class="h-3 w-3 inline mr-1" />
-                      {{ contract.created_by }}
-                    </span>
-                    <span>
-                      <Icon icon="lucide:calendar" class="h-3 w-3 inline mr-1" />
-                      {{ contract.created_at }}
-                    </span>
-                    <span v-if="contract.documents_count > 0">
-                      <Icon icon="lucide:paperclip" class="h-3 w-3 inline mr-1" />
-                      {{ contract.documents_count }} documento(s)
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Ações -->
-                <div class="flex gap-2 ml-4" @click.stop>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="$inertia.visit(route('contracts.edit', contract.id))"
-                  >
-                    <Icon icon="lucide:edit" class="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    @click="confirmDelete(contract)"
-                  >
-                    <Icon icon="lucide:trash-2" class="h-4 w-4 text-red-600" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </AppLayout>
-</template>
-
 <script setup>
 import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { Icon } from '@iconify/vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
-import { Icon } from '@iconify/vue'
+import Badge from '@/components/ui/badge/Badge.vue'
 
 const props = defineProps({
   contracts: Array,
@@ -194,20 +33,27 @@ const applyFilters = () => {
   })
 }
 
-const getStatusClass = (contract) => {
+const getStatusVariant = (contract) => {
   if (contract.is_expired || contract.status === 'vencido') {
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    return 'destructive'
   }
   if (contract.expires_today) {
-    return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+    return 'destructive'
   }
-  if (contract.expires_soon) {
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+  if (contract.expires_soon && contract.days_until_expiration !== null) {
+    const days = contract.days_until_expiration
+    if (days <= 7) {
+      return 'default' // Laranja para menos de 7 dias
+    } else if (days <= 15) {
+      return 'secondary' // Amarelo para menos de 15 dias
+    } else if (days <= 30) {
+      return 'outline' // Cinza para menos de 30 dias
+    }
   }
   if (contract.status === 'encerrado') {
-    return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+    return 'outline'
   }
-  return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+  return 'success'
 }
 
 const getStatusLabel = (contract) => {
@@ -217,8 +63,15 @@ const getStatusLabel = (contract) => {
   if (contract.expires_today) {
     return 'Vence Hoje'
   }
-  if (contract.expires_soon) {
-    return 'Vence em Breve'
+  if (contract.expires_soon && contract.days_until_expiration !== null) {
+    const days = contract.days_until_expiration
+    if (days <= 0) {
+      return 'Vence Hoje'
+    } else if (days === 1) {
+      return 'Vence em 1 dia'
+    } else if (days <= 30) {
+      return `Vence em ${days} dias`
+    }
   }
   if (contract.status === 'encerrado') {
     return 'Encerrado'
@@ -240,9 +93,201 @@ const formatCurrency = (amount, currency = 'BRL') => {
   }).format(amount)
 }
 
-const confirmDelete = (contract) => {
+const confirmDelete = (e, contract) => {
+  e.preventDefault()
+  e.stopPropagation()
   if (confirm(`Tem certeza que deseja excluir o contrato "${contract.name}"?\n\nEsta ação não pode ser desfeita.`)) {
     router.delete(route('contracts.destroy', contract.id))
   }
 }
 </script>
+
+<template>
+  <AppLayout title="Contratos">
+    <div class="space-y-6">
+      <!-- Header -->
+      <header class="space-y-2">
+        <p class="text-sm text-muted-foreground">Dashboard</p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 class="text-3xl font-semibold">Contratos</h1>
+            <p class="text-muted-foreground">
+              Gerencie contratos, alertas de vencimento e documentos em um só lugar.
+            </p>
+          </div>
+          <Button @click="router.visit(route('contracts.create'))">
+            Novo contrato
+          </Button>
+        </div>
+      </header>
+
+      <!-- Filtros -->
+      <div class="rounded-lg border border-muted-foreground/20 p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Busca -->
+          <div class="md:col-span-2">
+            <div class="relative">
+              <Icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                v-model="filters.search"
+                type="text"
+                placeholder="Buscar por nome ou tipo..."
+                @input="debouncedFilter"
+                class="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <!-- Status -->
+          <select
+            v-model="filters.status"
+            @change="applyFilters"
+            class="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+          >
+            <option value="todos">Todos os status</option>
+            <option value="ativo">Ativo</option>
+            <option value="vencido">Vencido</option>
+            <option value="encerrado">Encerrado</option>
+          </select>
+
+          <!-- Tipo -->
+          <input
+            v-model="filters.type"
+            type="text"
+            placeholder="Filtrar por tipo..."
+            @input="debouncedFilter"
+            class="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <!-- Lista de Contratos -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Seus contratos</h2>
+          <p class="text-sm text-muted-foreground">{{ contracts.length }} contrato(s)</p>
+        </div>
+
+        <!-- Estado vazio -->
+        <div v-if="contracts.length === 0" class="rounded-lg border border-dashed p-8 text-center">
+          <Icon icon="lucide:folder-open" class="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
+          <p class="text-muted-foreground mb-2">Nenhum contrato encontrado</p>
+          <p class="text-sm text-muted-foreground/75">Comece clicando em "Novo contrato"</p>
+        </div>
+
+        <!-- Tabela de contratos -->
+        <div v-else class="rounded-lg border border-muted-foreground/20 bg-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full table-fixed">
+              <!-- Header -->
+              <thead class="bg-muted/50">
+                <tr class="border-b border-muted-foreground/20">
+                  <th class="w-[35%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Contrato
+                  </th>
+                  <th class="w-[15%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                    Tipo
+                  </th>
+                  <th class="w-[15%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
+                    Vencimento
+                  </th>
+                  <th class="w-[15%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden xl:table-cell">
+                    Valor
+                  </th>
+                  <th class="w-[10%] px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th class="w-[10%] px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+
+              <!-- Body -->
+              <tbody class="divide-y divide-muted-foreground/10">
+                <tr
+                  v-for="contract in contracts"
+                  :key="contract.id"
+                  @click="router.visit(route('contracts.show', contract.id))"
+                  class="hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  <!-- Contrato -->
+                  <td class="px-4 py-3">
+                    <div class="flex items-start gap-3 min-w-0">
+                      <Icon icon="lucide:file-text" class="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div class="min-w-0 flex-1">
+                        <p class="font-medium text-foreground truncate" :title="contract.name">
+                          {{ contract.name }}
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2 mt-1 md:hidden">
+                          <span class="text-xs text-muted-foreground truncate">{{ contract.contract_type }}</span>
+                          <span v-if="contract.end_date" class="text-xs text-muted-foreground">
+                            • {{ formatDate(contract.end_date) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Tipo (hidden on mobile) -->
+                  <td class="px-4 py-3 hidden md:table-cell">
+                    <span class="text-sm text-muted-foreground truncate block" :title="contract.contract_type">
+                      {{ contract.contract_type }}
+                    </span>
+                  </td>
+
+                  <!-- Vencimento (hidden on mobile/tablet) -->
+                  <td class="px-4 py-3 hidden lg:table-cell">
+                    <div v-if="contract.end_date" class="flex items-center gap-2">
+                      <Icon icon="lucide:calendar" class="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span class="text-sm text-foreground truncate">{{ formatDate(contract.end_date) }}</span>
+                    </div>
+                    <span v-else class="text-sm text-muted-foreground">-</span>
+                  </td>
+
+                  <!-- Valor (hidden on mobile/tablet/small desktop) -->
+                  <td class="px-4 py-3 hidden xl:table-cell">
+                    <div v-if="contract.amount" class="flex items-center gap-2">
+                      <Icon icon="lucide:dollar-sign" class="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span class="text-sm font-medium text-foreground truncate">
+                        {{ formatCurrency(contract.amount, contract.currency) }}
+                      </span>
+                    </div>
+                    <span v-else class="text-sm text-muted-foreground">-</span>
+                  </td>
+
+                  <!-- Status -->
+                  <td class="px-4 py-3 text-center">
+                    <Badge :variant="getStatusVariant(contract)" class="inline-flex whitespace-nowrap">
+                      {{ getStatusLabel(contract) }}
+                    </Badge>
+                  </td>
+
+                  <!-- Ações -->
+                  <td class="px-4 py-3 text-right" @click.stop>
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        @click.stop="router.visit(route('contracts.edit', contract.id))"
+                        class="p-2 rounded-md hover:bg-accent transition-colors flex-shrink-0"
+                        title="Editar"
+                      >
+                        <Icon icon="lucide:edit" class="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      <button
+                        @click.stop="confirmDelete($event, contract)"
+                        class="p-2 rounded-md hover:bg-accent transition-colors flex-shrink-0"
+                        title="Excluir"
+                      >
+                        <Icon icon="lucide:trash-2" class="h-4 w-4 text-red-600" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </AppLayout>
+</template>

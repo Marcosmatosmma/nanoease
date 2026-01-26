@@ -29,13 +29,17 @@ class Invoice extends Model
         'invoice_number',
         'description',
         'xml_data',
+        'is_paid',
+        'paid_at',
     ];
 
     protected $casts = [
         'invoice_date' => 'date',
         'due_date' => 'date',
+        'paid_at' => 'date',
         'amount' => 'decimal:2',
         'xml_data' => 'array',
+        'is_paid' => 'boolean',
     ];
 
     /**

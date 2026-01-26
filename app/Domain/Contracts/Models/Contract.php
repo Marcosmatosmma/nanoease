@@ -102,6 +102,14 @@ class Contract extends Model
     }
 
     /**
+     * Contrato tem múltiplos comentários
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ContractComment::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
      * Contrato tem múltiplas notas fiscais
      */
     public function invoices(): HasMany

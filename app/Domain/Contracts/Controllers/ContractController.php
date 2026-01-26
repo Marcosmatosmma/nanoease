@@ -86,6 +86,7 @@ final class ContractController
                 'is_expired' => $contract->isExpired(),
                 'expires_today' => $contract->expirestoday(),
                 'expires_soon' => $contract->expiresInDays(30),
+                'days_until_expiration' => $contract->end_date ? now()->startOfDay()->diffInDays($contract->end_date->startOfDay(), false) : null,
                 'documents_count' => $contract->documents->count(),
                 'created_by' => $contract->user->name,
                 'created_at' => $contract->created_at->format('d/m/Y'),
@@ -111,6 +112,7 @@ final class ContractController
             'history.user',
             'user',
             'invoices.uploader',
+            'comments.user',
         ]);
 
         return Inertia::render('Contracts/Show', [
@@ -181,12 +183,25 @@ final class ContractController
                     'pdf_size' => $invoice->formatted_pdf_size,
                     'is_overdue' => $invoice->isOverdue(),
                     'is_due_today' => $invoice->isDueToday(),
+                    'is_paid' => $invoice->is_paid,
+                    'paid_at' => $invoice->paid_at?->format('d/m/Y'),
                     'uploaded_by' => $invoice->uploader->name,
                     'uploaded_at' => $invoice->created_at->format('d/m/Y H:i'),
+                ]),
+                'comments' => $contract->comments->map(fn($comment) => [
+                    'id' => $comment->id,
+                    'comment' => $comment->comment,
+                    'user' => [
+                        'id' => $comment->user->id,
+                        'name' => $comment->user->name,
+                    ],
+                    'created_at' => $comment->created_at->format('d/m/Y H:i'),
+                    'is_author' => $comment->user_id === Auth::id(),
                 ]),
                 'created_by' => $contract->user->name,
                 'created_at' => $contract->created_at->format('d/m/Y H:i'),
             ],
+            'report' => $this->calculateReportData($contract),
         ]);
     }
 
@@ -226,6 +241,9 @@ final class ContractController
     {
         $this->authorize('update', $contract);
 
+        // Carregar relacionamentos
+        $contract->load(['documents', 'alerts', 'invoices.uploader', 'comments.user']);
+
         return Inertia::render('Contracts/Edit', [
             'contract' => [
                 'id' => $contract->id,
@@ -258,7 +276,53 @@ final class ContractController
                 'invoice_recipient_address' => $contract->invoice_recipient_address,
                 'invoice_service_code' => $contract->invoice_service_code,
                 'invoice_due_day' => $contract->invoice_due_day,
+                // Relacionamentos (contagens)
+                'documents' => $contract->documents->map(fn($doc) => [
+                    'id' => $doc->id,
+                    'file_name' => $doc->file_name,
+                ]),
+                'alerts' => $contract->alerts->map(fn($alert) => [
+                    'id' => $alert->id,
+                    'alert_type' => $alert->alert_type,
+                    'days_before' => $alert->days_before,
+                    'is_active' => $alert->is_active,
+                    'triggered_at' => $alert->triggered_at?->format('d/m/Y H:i'),
+                    'task_id' => $alert->task_id,
+                    'send_email' => $alert->send_email,
+                    'email_to' => $alert->email_to,
+                    'email_cc' => $alert->email_cc,
+                ]),
+                'invoices' => $contract->invoices->map(fn($invoice) => [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'invoice_date' => $invoice->invoice_date?->format('Y-m-d'),
+                    'due_date' => $invoice->due_date?->format('Y-m-d'),
+                    'amount' => $invoice->amount,
+                    'description' => $invoice->description,
+                    'has_pdf' => (bool) $invoice->pdf_path,
+                    'has_xml' => (bool) $invoice->xml_path,
+                    'is_paid' => $invoice->is_paid,
+                    'paid_at' => $invoice->paid_at?->format('d/m/Y'),
+                    'uploaded_by' => $invoice->uploader ? [
+                        'id' => $invoice->uploader->id,
+                        'name' => $invoice->uploader->name,
+                    ] : null,
+                    'is_overdue' => $invoice->isOverdue(),
+                    'is_due_today' => $invoice->isDueToday(),
+                    'created_at' => $invoice->created_at->format('d/m/Y H:i'),
+                ]),
+                'comments' => $contract->comments->map(fn($comment) => [
+                    'id' => $comment->id,
+                    'comment' => $comment->comment,
+                    'user' => [
+                        'id' => $comment->user->id,
+                        'name' => $comment->user->name,
+                    ],
+                    'created_at' => $comment->created_at->format('d/m/Y H:i'),
+                    'is_author' => $comment->user_id === Auth::id(),
+                ]),
             ],
+            'report' => $this->calculateReportData($contract),
         ]);
     }
 
@@ -343,25 +407,185 @@ final class ContractController
     }
 
     /**
-     * Gerencia alertas do contrato
+     * Busca e-mail do usuário da integração conectada
      */
-    public function manageAlerts(Request $request, Contract $contract, ContractAlertService $alertService): RedirectResponse
+    public function getUserEmail(): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Tentar buscar e-mail da integração Gmail
+        $integration = \App\Domain\Integrations\Models\Integration::where('team_id', $user->currentTeam->id)
+            ->where('provider', 'gmail')
+            ->where('status', 'connected')
+            ->first();
+
+        if ($integration && isset($integration->metadata['email'])) {
+            return response()->json([
+                'email' => $integration->metadata['email'],
+                'source' => 'gmail_integration'
+            ]);
+        }
+
+        // Fallback: e-mail do usuário logado
+        return response()->json([
+            'email' => $user->email,
+            'source' => 'user_account'
+        ]);
+    }
+
+    /**
+     * Cria novo alerta para o contrato
+     */
+    public function storeAlert(Request $request, Contract $contract, ContractAlertService $alertService): RedirectResponse
     {
         $this->authorize('update', $contract);
+
+        $validated = $request->validate([
+            'alert_type' => ['required', 'string', 'in:before_expiration,on_expiration,after_expiration'],
+            'days_before' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'send_email' => ['boolean'],
+            'email_to' => ['nullable', 'required_if:send_email,true', 'email'],
+            'email_cc' => ['nullable', 'array'],
+            'email_cc.*' => ['email'],
+        ]);
+
+        $alert = ContractAlert::create([
+            'contract_id' => $contract->id,
+            'team_id' => $contract->team_id,
+            'alert_type' => $validated['alert_type'],
+            'days_before' => $validated['days_before'] ?? null,
+            'send_email' => $validated['send_email'] ?? false,
+            'email_to' => $validated['email_to'] ?? null,
+            'email_cc' => $validated['email_cc'] ?? null,
+            'is_active' => true,
+        ]);
+
+        return Redirect::back()
+            ->with('success', 'Alerta criado com sucesso!');
+    }
+
+    /**
+     * Atualiza alerta existente
+     */
+    public function updateAlert(Request $request, ContractAlert $alert, ContractAlertService $alertService): RedirectResponse
+    {
+        $this->authorize('update', $alert->contract);
 
         $request->validate([
             'alert_type' => ['required', 'string', 'in:before_expiration,on_expiration,after_expiration'],
             'days_before' => ['nullable', 'integer', 'min:1', 'max:365'],
         ]);
 
-        $alertService->createAlert(
-            $contract,
-            $request->alert_type,
-            $request->days_before
-        );
+        $alert->update([
+            'alert_type' => $request->alert_type,
+            'days_before' => $request->days_before,
+        ]);
 
         return Redirect::back()
-            ->with('success', 'Alerta criado com sucesso!');
+            ->with('success', 'Alerta atualizado com sucesso!');
+    }
+
+    /**
+     * Remove alerta
+     */
+    public function destroyAlert(ContractAlert $alert): RedirectResponse
+    {
+        $this->authorize('update', $alert->contract);
+
+        $alert->delete();
+
+        return Redirect::back()
+            ->with('success', 'Alerta removido com sucesso!');
+    }
+
+    /**
+     * Ativa/Desativa alerta
+     */
+    public function toggleAlert(ContractAlert $alert, ContractAlertService $alertService): RedirectResponse
+    {
+        $this->authorize('update', $alert->contract);
+
+        if ($alert->is_active) {
+            $alertService->deactivateAlert($alert);
+            $message = 'Alerta desativado com sucesso!';
+        } else {
+            $alertService->reactivateAlert($alert);
+            $message = 'Alerta reativado com sucesso!';
+        }
+
+        return Redirect::back()
+            ->with('success', $message);
+    }
+
+    /**
+     * Cria tarefa a partir do alerta
+     */
+    public function createTaskFromAlert(ContractAlert $alert, CreateTaskFromContractAction $action): RedirectResponse
+    {
+        $this->authorize('view', $alert->contract);
+
+        $user = Auth::user();
+
+        // Buscar primeira lista do primeiro board do team
+        $defaultList = \App\Domain\Tasks\Models\BoardList::whereHas('board', function ($query) use ($user) {
+            $query->where('team_id', $user->currentTeam->id);
+        })->first();
+
+        if (!$defaultList) {
+            return Redirect::back()
+                ->with('error', 'Nenhum board encontrado. Crie um board primeiro.');
+        }
+
+        $task = $action->handle($alert, $defaultList->id);
+
+        // Vincular tarefa ao alerta
+        $alert->task_id = $task->id;
+        $alert->save();
+
+        return Redirect::back()
+            ->with('success', 'Tarefa criada com sucesso!');
+    }
+
+    /**
+     * Cria novo comentário para o contrato
+     */
+    public function storeComment(Request $request, Contract $contract): RedirectResponse
+    {
+        $this->authorize('view', $contract);
+
+        $validated = $request->validate([
+            'comment' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $user = Auth::user();
+
+        \App\Domain\Contracts\Models\ContractComment::create([
+            'contract_id' => $contract->id,
+            'user_id' => $user->id,
+            'team_id' => $contract->team_id,
+            'comment' => $validated['comment'],
+        ]);
+
+        return Redirect::back()
+            ->with('success', 'Comentário adicionado com sucesso!');
+    }
+
+    /**
+     * Remove comentário
+     */
+    public function destroyComment(\App\Domain\Contracts\Models\ContractComment $comment): RedirectResponse
+    {
+        // Apenas o autor ou admin pode deletar
+        $user = Auth::user();
+        
+        if ($comment->user_id !== $user->id) {
+            $this->authorize('update', $comment->contract);
+        }
+
+        $comment->delete();
+
+        return Redirect::back()
+            ->with('success', 'Comentário removido com sucesso!');
     }
 
     /**
@@ -514,26 +738,29 @@ final class ContractController
 
         $request->validate([
             'pdf_file' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
-            'xml_file' => ['nullable', 'file', 'mimes:xml', 'max:10240'],
+            'xml_file' => ['nullable', 'file', function ($attribute, $value, $fail) {
+                if ($value) {
+                    $extension = strtolower($value->getClientOriginalExtension());
+                    if ($extension !== 'xml') {
+                        $fail('O arquivo deve ter extensão .xml');
+                    }
+                }
+            }, 'max:10240'],
             'invoice_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
-            'amount' => ['nullable', 'numeric', 'min:0'],
-            'invoice_number' => ['nullable', 'string', 'max:100'],
+            'amount' => ['required', 'numeric', 'min:0'],
+            'invoice_number' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'is_paid' => ['nullable', 'boolean'],
+            'paid_at' => ['nullable', 'date'],
         ]);
-
-        // Pelo menos um arquivo deve ser enviado
-        if (!$request->hasFile('pdf_file') && !$request->hasFile('xml_file')) {
-            \Log::warning('Tentativa de upload sem arquivos');
-            return Redirect::back()->withErrors(['file' => 'Envie ao menos um arquivo (PDF ou XML)']);
-        }
 
         $user = Auth::user();
 
         try {
             $invoice = $action->handle(
                 $contract,
-                $request->only(['invoice_date', 'due_date', 'amount', 'invoice_number', 'description']),
+                $request->only(['invoice_date', 'due_date', 'amount', 'invoice_number', 'description', 'is_paid', 'paid_at']),
                 $request->file('pdf_file'),
                 $request->file('xml_file'),
                 $user->id,
@@ -613,6 +840,41 @@ final class ContractController
     }
 
     /**
+     * Atualizar nota fiscal
+     */
+    public function updateInvoice(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $user = Auth::user();
+        
+        // Verificar permissão
+        if ($invoice->team_id !== $user->currentTeam->id) {
+            abort(403, 'Acesso negado');
+        }
+
+        $request->validate([
+            'invoice_number' => ['required', 'string', 'max:100'],
+            'invoice_date' => ['nullable', 'date'],
+            'due_date' => ['nullable', 'date'],
+            'amount' => ['required', 'numeric', 'min:0'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'is_paid' => ['nullable', 'boolean'],
+            'paid_at' => ['nullable', 'date'],
+        ]);
+
+        $invoice->update([
+            'invoice_number' => $request->invoice_number,
+            'invoice_date' => $request->invoice_date,
+            'due_date' => $request->due_date,
+            'amount' => $request->amount,
+            'description' => $request->description,
+            'is_paid' => $request->is_paid ?? false,
+            'paid_at' => $request->paid_at,
+        ]);
+
+        return Redirect::back()->with('success', 'Nota fiscal atualizada com sucesso!');
+    }
+
+    /**
      * Extrai dados de PDF de nota fiscal usando IA
      */
     public function extractInvoiceDataFromPdf(Request $request, InvoicePdfExtractionService $extractionService): JsonResponse
@@ -639,5 +901,233 @@ final class ContractController
                 'error' => 'Erro ao processar PDF: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Importa notas fiscais a partir de arquivo CSV
+     */
+    public function importInvoicesCsv(Request $request, Contract $contract): RedirectResponse
+    {
+        $this->authorize('update', $contract);
+
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'], // 10MB
+        ]);
+
+        $user = Auth::user();
+        $file = $request->file('csv_file');
+        
+        try {
+            $content = file_get_contents($file->getRealPath());
+            
+            // Detectar separador (vírgula ou ponto-e-vírgula)
+            $separator = ',';
+            if (substr_count($content, ';') > substr_count($content, ',')) {
+                $separator = ';';
+            }
+            
+            \Log::info('Detectado separador CSV: ' . $separator);
+            
+            $handle = fopen($file->getRealPath(), 'r');
+            
+            // Ler header
+            $header = fgetcsv($handle, 0, $separator);
+            
+            if (!$header) {
+                return Redirect::back()->withErrors(['csv' => 'Arquivo CSV vazio ou inválido']);
+            }
+
+            // Normalizar header (remover BOM e espaços)
+            $header = array_map(function($col) {
+                return trim(str_replace("\xEF\xBB\xBF", '', $col));
+            }, $header);
+            
+            \Log::info('Header CSV normalizado:', $header);
+
+            $imported = 0;
+            $errors = [];
+            $line = 1; // Linha 1 é o header
+
+            while (($data = fgetcsv($handle, 0, $separator)) !== false) {
+                $line++;
+                
+                \Log::info("Linha {$line} dados brutos:", $data);
+                
+                // Pular linhas vazias
+                if (count(array_filter($data)) === 0) {
+                    continue;
+                }
+                
+                // Validar se tem o mesmo número de colunas
+                if (count($data) !== count($header)) {
+                    $errors[] = "Linha {$line}: número de colunas não corresponde ao header (esperado: " . count($header) . ", encontrado: " . count($data) . ")";
+                    continue;
+                }
+                
+                // Criar array associativo
+                $row = array_combine($header, $data);
+                
+                \Log::info("Linha {$line} array associativo:", $row);
+                
+                // Validar campos obrigatórios
+                if (empty(trim($row['numero_nf'] ?? '')) || empty(trim($row['valor'] ?? ''))) {
+                    $errors[] = "Linha {$line}: número e valor são obrigatórios";
+                    continue;
+                }
+
+                try {
+                    // Converter datas de forma segura
+                    $invoiceDate = null;
+                    if (!empty(trim($row['data_emissao'] ?? ''))) {
+                        $timestamp = strtotime($row['data_emissao']);
+                        if ($timestamp !== false) {
+                            $invoiceDate = date('Y-m-d', $timestamp);
+                        }
+                    }
+                    
+                    $dueDate = null;
+                    if (!empty(trim($row['data_vencimento'] ?? ''))) {
+                        $timestamp = strtotime($row['data_vencimento']);
+                        if ($timestamp !== false) {
+                            $dueDate = date('Y-m-d', $timestamp);
+                        }
+                    }
+                    
+                    // Normalizar valor (remover pontos de milhar e converter vírgula em ponto)
+                    $valor = trim($row['valor']);
+                    // Se tiver vírgula, assumir que é decimal europeu (1.500,50)
+                    if (strpos($valor, ',') !== false) {
+                        $valor = str_replace('.', '', $valor); // Remover pontos de milhar
+                        $valor = str_replace(',', '.', $valor); // Converter vírgula em ponto
+                    }
+                    
+                    // Processar campo "pago" (aceita: sim, não, true, false, 1, 0, s, n)
+                    $isPaid = false;
+                    $paidAt = null;
+                    if (isset($row['pago'])) {
+                        $pagoValue = strtolower(trim($row['pago']));
+                        $isPaid = in_array($pagoValue, ['sim', 's', 'true', '1', 'yes']);
+                        
+                        // Se está pago e tem data de pagamento, usar
+                        if ($isPaid && isset($row['data_pagamento']) && !empty(trim($row['data_pagamento']))) {
+                            $timestamp = strtotime($row['data_pagamento']);
+                            if ($timestamp !== false) {
+                                $paidAt = date('Y-m-d', $timestamp);
+                            }
+                        }
+                    }
+                    
+                    // Criar nota fiscal
+                    \App\Domain\Contracts\Models\Invoice::create([
+                        'contract_id' => $contract->id,
+                        'team_id' => $contract->team_id,
+                        'uploaded_by' => $user->id,
+                        'invoice_number' => trim($row['numero_nf']),
+                        'invoice_date' => $invoiceDate,
+                        'due_date' => $dueDate,
+                        'amount' => floatval($valor),
+                        'description' => !empty(trim($row['descricao'] ?? '')) ? trim($row['descricao']) : null,
+                        'is_paid' => $isPaid,
+                        'paid_at' => $paidAt,
+                    ]);
+                    
+                    $imported++;
+                } catch (\Exception $e) {
+                    $errors[] = "Linha {$line}: {$e->getMessage()}";
+                    \Log::error("Erro ao importar linha {$line}: " . $e->getMessage(), ['row' => $row]);
+                }
+            }
+            
+            fclose($handle);
+
+            if ($imported > 0) {
+                $message = "✓ {$imported} nota(s) fiscal(is) importada(s) com sucesso!";
+                if (count($errors) > 0) {
+                    $message .= " " . count($errors) . " erro(s) encontrado(s).";
+                }
+                
+                return Redirect::back()->with('success', $message);
+            } else {
+                return Redirect::back()->withErrors([
+                    'csv' => 'Nenhuma nota fiscal foi importada. ' . implode(', ', array_slice($errors, 0, 3))
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Erro ao importar CSV de notas fiscais: ' . $e->getMessage());
+            
+            return Redirect::back()->withErrors([
+                'csv' => 'Erro ao processar arquivo CSV: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Calcular dados do relatório do contrato
+     */
+    private function calculateReportData(Contract $contract): array
+    {
+        // Cálculos financeiros
+        $totalInvoiced = $contract->invoices()->sum('amount');
+        $totalPaid = $contract->invoices()->where('is_paid', true)->sum('amount');
+        $contractAmount = $contract->amount ?? 0;
+        
+        $liquidatedPercentage = $contractAmount > 0 
+            ? ($totalPaid / $contractAmount) * 100 
+            : 0;
+        
+        // Cálculos de tempo
+        $today = now();
+        $startDate = $contract->start_date;
+        $endDate = $contract->end_date;
+        
+        $totalDays = 0;
+        $elapsedDays = 0;
+        $remainingDays = 0;
+        $timeElapsedPercentage = 0;
+        $isExpired = false;
+        
+        if ($startDate && $endDate) {
+            $totalDays = $startDate->diffInDays($endDate);
+            $elapsedDays = $startDate->diffInDays($today);
+            $remainingDays = max(0, $today->diffInDays($endDate, false));
+            
+            $timeElapsedPercentage = $totalDays > 0 
+                ? min(100, ($elapsedDays / $totalDays) * 100) 
+                : 0;
+            
+            $isExpired = $endDate->isPast();
+        }
+        
+        // Análise de notas fiscais
+        $totalInvoices = $contract->invoices()->count();
+        $paidInvoices = $contract->invoices()->where('is_paid', true)->count();
+        
+        $paidInvoicesPercentage = $totalInvoices > 0 
+            ? ($paidInvoices / $totalInvoices) * 100 
+            : 0;
+        
+        return [
+            'financial' => [
+                'contract_amount' => $contractAmount,
+                'total_invoiced' => $totalInvoiced,
+                'total_paid' => $totalPaid,
+                'liquidated_percentage' => round($liquidatedPercentage, 2),
+                'remaining_amount' => $contractAmount - $totalPaid,
+                'pending_payment' => $totalInvoiced - $totalPaid,
+            ],
+            'time' => [
+                'total_days' => $totalDays,
+                'elapsed_days' => min($elapsedDays, $totalDays),
+                'remaining_days' => $remainingDays,
+                'time_elapsed_percentage' => round($timeElapsedPercentage, 2),
+                'is_expired' => $isExpired,
+            ],
+            'invoices' => [
+                'total' => $totalInvoices,
+                'paid' => $paidInvoices,
+                'unpaid' => $totalInvoices - $paidInvoices,
+                'paid_percentage' => round($paidInvoicesPercentage, 2),
+            ],
+        ];
     }
 }

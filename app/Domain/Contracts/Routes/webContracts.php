@@ -36,11 +36,21 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('/contracts/{contract}/ask-assistant', [ContractController::class, 'askAssistant'])->name('contracts.ask-assistant');
     
     // Alertas
-    Route::post('/contracts/{contract}/alerts', [ContractController::class, 'manageAlerts'])->name('contracts.alerts.create');
-    Route::post('/contract-alerts/{alert}/create-task', [ContractController::class, 'createTask'])->name('contract-alerts.create-task');
+    Route::get('/contracts/get-user-email', [ContractController::class, 'getUserEmail'])->name('contracts.get-user-email');
+    Route::post('/contracts/{contract}/alerts', [ContractController::class, 'storeAlert'])->name('contracts.alerts.store');
+    Route::put('/contract-alerts/{alert}', [ContractController::class, 'updateAlert'])->name('contracts.alerts.update');
+    Route::delete('/contract-alerts/{alert}', [ContractController::class, 'destroyAlert'])->name('contracts.alerts.destroy');
+    Route::post('/contract-alerts/{alert}/toggle', [ContractController::class, 'toggleAlert'])->name('contracts.alerts.toggle');
+    Route::post('/contract-alerts/{alert}/create-task', [ContractController::class, 'createTaskFromAlert'])->name('contract-alerts.create-task');
+    
+    // Comentários
+    Route::post('/contracts/{contract}/comments', [ContractController::class, 'storeComment'])->name('contracts.comments.store');
+    Route::delete('/contract-comments/{comment}', [ContractController::class, 'destroyComment'])->name('contracts.comments.destroy');
     
     // Notas Fiscais
     Route::post('/contracts/{contract}/invoices', [ContractController::class, 'uploadInvoice'])->name('contracts.invoices.upload');
+    Route::post('/contracts/{contract}/invoices/import-csv', [ContractController::class, 'importInvoicesCsv'])->name('contracts.invoices.import-csv');
+    Route::put('/invoices/{invoice}', [ContractController::class, 'updateInvoice'])->name('invoices.update');
     Route::get('/invoices/{invoice}/pdf', [ContractController::class, 'downloadInvoicePdf'])->name('invoices.download-pdf');
     Route::get('/invoices/{invoice}/xml', [ContractController::class, 'downloadInvoiceXml'])->name('invoices.download-xml');
     Route::delete('/invoices/{invoice}', [ContractController::class, 'destroyInvoice'])->name('invoices.destroy');

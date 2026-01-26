@@ -42,6 +42,8 @@ class UploadInvoiceAction
             'amount' => $data['amount'] ?? null,
             'invoice_number' => $data['invoice_number'] ?? null,
             'description' => $data['description'] ?? null,
+            'is_paid' => $data['is_paid'] ?? false,
+            'paid_at' => $data['paid_at'] ?? null,
         ];
 
         // Upload do PDF
@@ -55,28 +57,28 @@ class UploadInvoiceAction
             $xmlPath = $this->saveXml($xmlFile, $contract->id, $teamId);
             $invoiceData['xml_path'] = $xmlPath;
             
-            // Tentar extrair dados do XML
+            // Tentar extrair dados do XML (apenas para salvar dados brutos)
             $extractedData = $this->extractDataFromXml($xmlFile);
             
             if ($extractedData) {
-                // Salvar dados brutos
+                // Salvar dados brutos do XML
                 $invoiceData['xml_data'] = $extractedData;
                 
-                // Preencher campos apenas se não foram preenchidos manualmente
-                if (!isset($data['invoice_number']) && isset($extractedData['numero'])) {
+                // Preencher campos apenas se não foram enviados do frontend
+                // (os dados já foram extraídos no frontend via JavaScript)
+                if (empty($data['invoice_number']) && isset($extractedData['numero'])) {
                     $invoiceData['invoice_number'] = $extractedData['numero'];
                 }
                 
-                if (!isset($data['invoice_date']) && isset($extractedData['data_emissao'])) {
+                if (empty($data['invoice_date']) && isset($extractedData['data_emissao'])) {
                     $invoiceData['invoice_date'] = $extractedData['data_emissao'];
                 }
                 
-                if (!isset($data['amount']) && isset($extractedData['valor_total'])) {
+                if (empty($data['amount']) && isset($extractedData['valor_total'])) {
                     $invoiceData['amount'] = $extractedData['valor_total'];
                 }
                 
-                // Vencimento pode vir do XML ou pode ser calculado
-                if (!isset($data['due_date']) && isset($extractedData['data_vencimento'])) {
+                if (empty($data['due_date']) && isset($extractedData['data_vencimento'])) {
                     $invoiceData['due_date'] = $extractedData['data_vencimento'];
                 }
             }

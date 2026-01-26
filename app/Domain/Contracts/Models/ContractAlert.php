@@ -24,11 +24,16 @@ class ContractAlert extends Model
         'triggered_at',
         'task_id',
         'is_active',
+        'send_email',
+        'email_to',
+        'email_cc',
     ];
 
     protected $casts = [
         'triggered_at' => 'datetime',
         'is_active' => 'boolean',
+        'send_email' => 'boolean',
+        'email_cc' => 'array',
     ];
 
     /**

@@ -48,12 +48,13 @@ class CreateTaskFromContractAction
             'board_list_id' => $boardList->id,
             'title' => $title,
             'description' => $description,
-            'source' => 'contract',
-            'source_id' => $contract->id,
+            'source' => 'system',
+            'source_id' => (string) $contract->id,
             'source_metadata' => [
                 'alert_id' => $alert->id,
                 'alert_type' => $alert->alert_type,
                 'contract_name' => $contract->name,
+                'contract_id' => $contract->id,
             ],
             'position' => $maxPosition + 1,
             'due_date' => $contract->end_date,
@@ -109,8 +110,9 @@ class CreateTaskFromContractAction
             $parts[] = '<p><strong>Renovação automática:</strong> ' . $renewal . '</p>';
         }
 
-        if ($contract->amount) {
-            $parts[] = '<p><strong>Valor:</strong> ' . $contract->currency . ' ' . number_format($contract->amount, 2, ',', '.') . '</p>';
+        if ($contract->amount && is_numeric($contract->amount)) {
+            $currency = $contract->currency ?? 'BRL';
+            $parts[] = '<p><strong>Valor:</strong> ' . $currency . ' ' . number_format((float) $contract->amount, 2, ',', '.') . '</p>';
         }
 
         $parts[] = '<hr>';

@@ -76,13 +76,10 @@ const nextStatusLabel = (status) => {
   <AppLayout title="Automações">
     <div class="space-y-6">
       <header class="space-y-2">
-        <p class="text-sm text-muted-foreground">Dashboard</p>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 class="text-3xl font-semibold">Automações</h1>
-            <p class="text-muted-foreground">
-              Evento → Interpretação → Ação. Comece pela leitura de e-mails já conectados.
-            </p>
+           
           </div>
           <Button :as="Link" :href="route('automations.new')" :disabled="!hasGmail">
             {{ hasGmail ? 'Nova automação' : 'Conecte o Gmail' }}

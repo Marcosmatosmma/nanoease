@@ -58,6 +58,10 @@ final class ContractController
             $query->where('status', $request->status);
         }
 
+        if ($request->has('role') && $request->role !== 'todos') {
+            $query->where('my_role', $request->role);
+        }
+
         if ($request->has('type') && $request->type) {
             $query->where('contract_type', $request->type);
         }
@@ -67,6 +71,26 @@ final class ContractController
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('contract_type', 'like', "%{$request->search}%");
             });
+        }
+
+        // Filtro por Data de Vencimento (Start)
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('end_date', '>=', $request->start_date);
+        }
+
+        // Filtro por Data de Vencimento (End)
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('end_date', '<=', $request->end_date);
+        }
+
+        // Filtro por Valor Mínimo
+        if ($request->has('min_amount') && $request->min_amount !== null) {
+            $query->where('amount', '>=', $request->min_amount);
+        }
+
+        // Filtro por Valor Máximo
+        if ($request->has('max_amount') && $request->max_amount !== null) {
+            $query->where('amount', '<=', $request->max_amount);
         }
 
         // Ordenação
@@ -90,12 +114,13 @@ final class ContractController
                 'documents_count' => $contract->documents->count(),
                 'created_by' => $contract->user->name,
                 'created_at' => $contract->created_at->format('d/m/Y'),
+                'my_role' => $contract->my_role,
             ];
         });
 
         return Inertia::render('Contracts/Index', [
             'contracts' => $contracts,
-            'filters' => $request->only(['status', 'type', 'search']),
+            'filters' => $request->only(['status', 'type', 'search', 'start_date', 'end_date', 'min_amount', 'max_amount', 'role']),
         ]);
     }
 

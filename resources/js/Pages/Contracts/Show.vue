@@ -51,7 +51,7 @@
 
               <!-- Tab: Nota Fiscal -->
               <button
-                v-if="contract.my_role === 'contratado'"
+
                 @click="activeTab = 'invoice'"
                 :class="[
                   'flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
@@ -271,8 +271,10 @@
             </div>
 
             <!-- Tab: Nota Fiscal -->
-            <div v-if="activeTab === 'invoice' && contract.my_role === 'contratado'">
-              <!-- Informações de Configuração da NF -->
+            <div v-if="activeTab === 'invoice'">
+              <!-- Informações de Configuração da NF (Apenas Contratado) -->
+              <div v-if="contract.my_role === 'contratado'">
+
               <div v-if="!hasInvoiceData" class="text-center py-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-6">
                 <Icon icon="lucide:settings" class="h-10 w-10 text-gray-400 mx-auto mb-2" />
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Nenhuma configuração de nota fiscal cadastrada</p>
@@ -369,8 +371,11 @@
                 </div>
               </div>
 
+              </div>
+
               <!-- Histórico de Notas Fiscais Emitidas -->
               <div>
+
                 <div class="mb-4">
                   <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
                     Notas Fiscais Emitidas

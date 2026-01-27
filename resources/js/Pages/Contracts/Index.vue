@@ -5,6 +5,17 @@ import { Icon } from '@iconify/vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
 import Badge from '@/components/ui/badge/Badge.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Label from '@/components/ui/label/Label.vue'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+} from '@/components/ui/sheet'
 
 const props = defineProps({
   contracts: Array,
@@ -14,7 +25,12 @@ const props = defineProps({
 const filters = ref({
   search: props.filters?.search || '',
   status: props.filters?.status || 'todos',
+  role: props.filters?.role || 'todos',
   type: props.filters?.type || '',
+  start_date: props.filters?.start_date || '',
+  end_date: props.filters?.end_date || '',
+  min_amount: props.filters?.min_amount || '',
+  max_amount: props.filters?.max_amount || '',
 })
 
 let debounceTimeout = null
@@ -22,7 +38,8 @@ let debounceTimeout = null
 const debouncedFilter = () => {
   clearTimeout(debounceTimeout)
   debounceTimeout = setTimeout(() => {
-    applyFilters()
+    // Para filtros via input texto, ainda mantemos debounce
+    // Mas agora aplicamos todos os filtros juntos
   }, 500)
 }
 
@@ -31,6 +48,20 @@ const applyFilters = () => {
     preserveState: true,
     preserveScroll: true,
   })
+}
+
+const clearFilters = () => {
+  filters.value = {
+    search: '',
+    status: 'todos',
+    role: 'todos',
+    type: '',
+    start_date: '',
+    end_date: '',
+    min_amount: '',
+    max_amount: '',
+  }
+  applyFilters()
 }
 
 const getStatusVariant = (contract) => {
@@ -107,64 +138,130 @@ const confirmDelete = (e, contract) => {
     <div class="space-y-6">
       <!-- Header -->
       <header class="space-y-2">
-        <p class="text-sm text-muted-foreground">Dashboard</p>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 class="text-3xl font-semibold">Contratos</h1>
-            <p class="text-muted-foreground">
-              Gerencie contratos, alertas de vencimento e documentos em um só lugar.
-            </p>
+        
           </div>
-          <Button @click="router.visit(route('contracts.create'))">
-            Novo contrato
-          </Button>
+          <div class="flex gap-2">
+             <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <Icon icon="lucide:filter" class="mr-2 h-4 w-4" />
+                  Filtros
+                </Button>
+              </SheetTrigger>
+              <SheetContent class="sm:max-w-lg">
+                <SheetHeader>
+                  <SheetTitle>Filtros Avançados</SheetTitle>
+                  <SheetDescription>
+                    Refine sua busca por contratos utilizando os filtros abaixo.
+                  </SheetDescription>
+                </SheetHeader>
+                <div class="py-6 px-6 space-y-6">
+                  <!-- Termo de Busca -->
+                  <div class="space-y-2">
+                    <Label>Buscar</Label>
+                    <Input
+                      v-model="filters.search"
+                      placeholder="Nome do contrato ou tipo..."
+                    />
+                  </div>
+
+                  <!-- Papel -->
+                  <div class="space-y-2">
+                    <Label>Seu Papel</Label>
+                    <select
+                      v-model="filters.role"
+                      class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="contratante">Contratante</option>
+                      <option value="contratado">Contratado</option>
+                    </select>
+                  </div>
+
+                  <!-- Status -->
+                  <div class="space-y-2">
+                    <Label>Status</Label>
+                    <select
+                      v-model="filters.status"
+                      class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="ativo">Ativo</option>
+                      <option value="vencido">Vencido</option>
+                      <option value="encerrado">Encerrado</option>
+                    </select>
+                  </div>
+
+                  <!-- Tipo de Prestação -->
+                   <div class="space-y-2">
+                    <Label>Tipo de Prestação</Label>
+                    <select
+                      v-model="filters.type"
+                      class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Prestação de Serviços">Prestação de Serviços</option>
+                      <option value="Aluguel">Aluguel</option>
+                      <option value="SaaS">SaaS</option>
+                      <option value="Fornecimento">Fornecimento</option>
+                      <option value="Trabalho">Trabalho</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </div>
+
+                  <!-- Vencimento -->
+                  <div class="space-y-2">
+                    <Label>Data de Vencimento</Label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="space-y-1">
+                        <span class="text-xs text-muted-foreground">De</span>
+                        <Input type="date" v-model="filters.start_date" />
+                      </div>
+                      <div class="space-y-1">
+                        <span class="text-xs text-muted-foreground">Até</span>
+                        <Input type="date" v-model="filters.end_date" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Valor -->
+                  <div class="space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="space-y-1">
+                        <span class="text-xs text-muted-foreground">Mínimo</span>
+                        <Input type="number" step="0.01" v-model="filters.min_amount" placeholder="0,00" />
+                      </div>
+                      <div class="space-y-1">
+                        <span class="text-xs text-muted-foreground">Máximo</span>
+                        <Input type="number" step="0.01" v-model="filters.max_amount" placeholder="0,00" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <SheetFooter>
+                  <div class="flex flex-col gap-2 w-full px-6">
+                    <Button @click="applyFilters">Aplicar Filtros</Button>
+                    <Button variant="outline" @click="clearFilters">Limpar Filtros</Button>
+                  </div>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+
+            <Button @click="router.visit(route('contracts.create'))">
+              Novo contrato
+            </Button>
+          </div>
         </div>
       </header>
-
-      <!-- Filtros -->
-      <div class="rounded-lg border border-muted-foreground/20 p-4">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Busca -->
-          <div class="md:col-span-2">
-            <div class="relative">
-              <Icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                v-model="filters.search"
-                type="text"
-                placeholder="Buscar por nome ou tipo..."
-                @input="debouncedFilter"
-                class="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <!-- Status -->
-          <select
-            v-model="filters.status"
-            @change="applyFilters"
-            class="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-          >
-            <option value="todos">Todos os status</option>
-            <option value="ativo">Ativo</option>
-            <option value="vencido">Vencido</option>
-            <option value="encerrado">Encerrado</option>
-          </select>
-
-          <!-- Tipo -->
-          <input
-            v-model="filters.type"
-            type="text"
-            placeholder="Filtrar por tipo..."
-            @input="debouncedFilter"
-            class="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-          />
-        </div>
-      </div>
 
       <!-- Lista de Contratos -->
       <div class="space-y-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Seus contratos</h2>
+
           <p class="text-sm text-muted-foreground">{{ contracts.length }} contrato(s)</p>
         </div>
 
@@ -172,7 +269,7 @@ const confirmDelete = (e, contract) => {
         <div v-if="contracts.length === 0" class="rounded-lg border border-dashed p-8 text-center">
           <Icon icon="lucide:folder-open" class="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
           <p class="text-muted-foreground mb-2">Nenhum contrato encontrado</p>
-          <p class="text-sm text-muted-foreground/75">Comece clicando em "Novo contrato"</p>
+          <p class="text-sm text-muted-foreground/75">Tente ajustar os filtros ou crie um novo contrato</p>
         </div>
 
         <!-- Tabela de contratos -->
@@ -184,6 +281,9 @@ const confirmDelete = (e, contract) => {
                 <tr class="border-b border-muted-foreground/20">
                   <th class="w-[35%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Contrato
+                  </th>
+                  <th class="w-[15%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                    Papel
                   </th>
                   <th class="w-[15%] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                     Tipo
@@ -213,20 +313,33 @@ const confirmDelete = (e, contract) => {
                 >
                   <!-- Contrato -->
                   <td class="px-4 py-3">
-                    <div class="flex items-start gap-3 min-w-0">
-                      <Icon icon="lucide:file-text" class="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div class="min-w-0 flex-1">
-                        <p class="font-medium text-foreground truncate" :title="contract.name">
-                          {{ contract.name }}
-                        </p>
+                    <div class="min-w-0">
+                      <p class="text-sm text-muted-foreground truncate" :title="contract.name">
+                        {{ contract.name }}
+                      </p>
                         <div class="flex flex-wrap items-center gap-2 mt-1 md:hidden">
+                          <Badge 
+                            :variant="contract.my_role === 'contratante' ? 'outline' : 'secondary'"
+                            class="uppercase text-[10px] mr-1"
+                          >
+                            {{ contract.my_role === 'contratante' ? 'Contratante' : 'Contratado' }}
+                          </Badge>
                           <span class="text-xs text-muted-foreground truncate">{{ contract.contract_type }}</span>
                           <span v-if="contract.end_date" class="text-xs text-muted-foreground">
                             • {{ formatDate(contract.end_date) }}
                           </span>
                         </div>
                       </div>
-                    </div>
+                  </td>
+
+                  <!-- Papel -->
+                  <td class="px-4 py-3 hidden md:table-cell">
+                    <Badge 
+                      :variant="contract.my_role === 'contratante' ? 'outline' : 'secondary'"
+                      class="uppercase text-[10px]"
+                    >
+                      {{ contract.my_role === 'contratante' ? 'Contratante' : 'Contratado' }}
+                    </Badge>
                   </td>
 
                   <!-- Tipo (hidden on mobile) -->
@@ -248,7 +361,7 @@ const confirmDelete = (e, contract) => {
                   <!-- Valor (hidden on mobile/tablet/small desktop) -->
                   <td class="px-4 py-3 hidden xl:table-cell">
                     <div v-if="contract.amount" class="flex items-center gap-2">
-                      <Icon icon="lucide:dollar-sign" class="h-4 w-4 text-muted-foreground flex-shrink-0" />
+               
                       <span class="text-sm font-medium text-foreground truncate">
                         {{ formatCurrency(contract.amount, contract.currency) }}
                       </span>

@@ -1,53 +1,65 @@
 <script setup>
-import StatsCard from '@/components/StatsCard.vue'
-import AppLayout from '@/layouts/AppLayout.vue'
+import { computed } from 'vue'
+import { Icon } from '@iconify/vue'
+import AppLayout from '@/Layouts/AppLayout.vue'
+import StatsCard from '@/Components/StatsCard.vue'
 
-const stats = [
+const props = defineProps({
+  stats: Object,
+})
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value)
+}
+
+const mainStats = computed(() => [
   {
-    value: 'Larasonic Documentation',
-    description: 'Check out our comprehensive documentation',
-    link: 'https://docs.larasonic.com/introduction',
-    icon: 'lucide:book-open',
+    value: props.stats.total_active,
+    description: 'Contratos Ativos',
+    icon: 'lucide:file-text',
   },
   {
-    value: 'GitHub Repository',
-    description: 'Star us on GitHub',
-    link: 'https://github.com/shipfastlabs/larasonic-vue',
-    icon: 'lucide:github',
+    value: props.stats.expiring_soon,
+    description: 'Vencendo em 30 dias',
+    icon: 'lucide:alert-triangle',
   },
   {
-    value: 'Roadmap',
-    description: 'See what\'s coming next',
-    link: 'https://github.com/shipfastlabs/larasonic-vue/discussions/categories/roadmap',
-    icon: 'lucide:map',
+    value: formatCurrency(props.stats.by_role.contratante.value),
+    description: 'Total a Pagar',
+    icon: 'lucide:trending-down',
   },
   {
-    value: 'Join Us',
-    description: 'Be part of our growing community',
-    link: 'https://github.com/shipfastlabs/larasonic-vue/discussions',
-    icon: 'lucide:users',
+    value: formatCurrency(props.stats.by_role.contratado.value),
+    description: 'Total a Receber',
+    icon: 'lucide:trending-up',
   },
-]
+])
 </script>
 
 <template>
   <AppLayout title="Dashboard">
-    <template #header>
-      <h2 class="text-xl font-semibold leading-tight">
-        Dashboard
-      </h2>
-    </template>
-
-    <div>
-      <div class="flex flex-1 flex-col gap-4 pt-0">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-2">
-          <StatsCard
-            v-for="stat in stats"
-            :key="stat.title"
-            v-bind="stat"
-          />
-        </div>
+    <div class="space-y-6">
+      
+      <!-- Cabeçalho -->
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight">Dashboard</h2>
+        <p class="text-muted-foreground">Visão geral dos seus contratos e desempenho.</p>
       </div>
+
+      <!-- Cards Principais -->
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          v-for="(stat, index) in mainStats"
+          :key="index"
+          :value="stat.value"
+          :description="stat.description"
+          :icon="stat.icon"
+        />
+      </div>
+
     </div>
   </AppLayout>
 </template>

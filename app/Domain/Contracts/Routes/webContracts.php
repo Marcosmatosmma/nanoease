@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Contracts\Controllers\ContractController;
+use App\Domain\Contracts\Controllers\PublicContractController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
@@ -54,4 +55,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('/invoices/{invoice}/pdf', [ContractController::class, 'downloadInvoicePdf'])->name('invoices.download-pdf');
     Route::get('/invoices/{invoice}/xml', [ContractController::class, 'downloadInvoiceXml'])->name('invoices.download-xml');
     Route::delete('/invoices/{invoice}', [ContractController::class, 'destroyInvoice'])->name('invoices.destroy');
+});
+
+// Rotas Públicas do Portal do Fornecedor
+Route::prefix('portal/fornecedor')->name('portal.supplier.')->group(function () {
+    Route::get('/', [PublicContractController::class, 'index'])->name('index');
+    Route::post('/search', [PublicContractController::class, 'search'])->name('search');
+    // Fallback para refresh da página (GET em /search redireciona para login)
+    Route::get('/search', fn() => redirect()->route('portal.supplier.index'));
+    Route::post('/contracts/{contract}/invoice', [PublicContractController::class, 'storeInvoice'])->name('contracts.invoice.store');
 });

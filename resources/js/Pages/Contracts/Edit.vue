@@ -47,7 +47,7 @@
 
               <!-- Tab: Nota Fiscal -->
               <button
-                v-if="form.my_role === 'contratado'"
+
                 @click="activeTab = 'invoice'"
                 :class="[
                   'flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
@@ -231,27 +231,54 @@
 
                   <!-- Contratado -->
                   <div class="space-y-4">
-                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <Icon icon="lucide:briefcase" class="h-4 w-4 inline-block mr-1" />
-                      Contratado
-                    </h4>
+                    <div class="flex items-center justify-between">
+                      <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        <Icon icon="lucide:briefcase" class="h-4 w-4 inline-block mr-1" />
+                        Contratado <span v-if="form.my_role === 'contratante'">(Fornecedor)</span>
+                      </h4>
+                      <span v-if="form.my_role === 'contratante'" class="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
+                        Chave de acesso ao portal
+                      </span>
+                    </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Razão Social / Nome
+                        Razão Social / Nome *
                       </label>
                       <Input
                         v-model="form.contracted"
                         placeholder="Nome do contratado"
+                        :required="form.my_role === 'contratante'"
                       />
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        CPF/CNPJ
+                        CPF/CNPJ *
                       </label>
                       <Input
                         v-model="form.contracted_cpf_cnpj"
                         placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                        :required="form.my_role === 'contratante'"
                       />
+                      <p v-if="form.my_role === 'contratante'" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Este CNPJ será usado pelo fornecedor para acessar o portal de envio de notas.
+                      </p>
+                    </div>
+
+                    <!-- Dia do Envio da NF (Apenas para Contratante) -->
+                    <div v-if="form.my_role === 'contratante'">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Dia Limite para Envio da NF
+                      </label>
+                      <Input
+                        v-model.number="form.invoice_due_day"
+                        type="number"
+                        min="1"
+                        max="31"
+                        placeholder="Ex: 20"
+                      />
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Dia limite para o fornecedor subir a nota fiscal.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -383,8 +410,10 @@
             </div>
 
             <!-- Tab: Nota Fiscal -->
-            <div v-if="activeTab === 'invoice' && form.my_role === 'contratado'" class="space-y-6">
-              <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <div v-if="activeTab === 'invoice'" class="space-y-6">
+              <div v-if="form.my_role === 'contratado'" class="space-y-6">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+
                 Configure as informações necessárias para emissão de Notas Fiscais
               </div>
 
@@ -557,8 +586,11 @@
                 </div>
               </div>
 
+              </div>
+
               <!-- Histórico de Notas Fiscais Emitidas -->
               <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+
                 <div class="flex items-center justify-between mb-4">
                   <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
                     Notas Fiscais Emitidas

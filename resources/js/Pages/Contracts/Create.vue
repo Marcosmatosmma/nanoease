@@ -208,28 +208,55 @@
 
               <!-- Contratado -->
               <div class="space-y-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Contratado
-                </h4>
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Contratado <span v-if="form.my_role === 'contratante'">(Fornecedor)</span>
+                  </h4>
+                  <span v-if="form.my_role === 'contratante'" class="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
+                    O CNPJ abaixo será a chave de acesso do fornecedor ao portal
+                  </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Nome
+                      Nome / Razão Social *
                     </label>
                     <Input
                       v-model="form.contracted"
                       placeholder="Nome completo do contratado"
+                      :required="form.my_role === 'contratante'"
                     />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      CPF ou CNPJ
+                      CPF ou CNPJ *
                     </label>
                     <Input
                       v-model="form.contracted_cpf_cnpj"
                       placeholder="000.000.000-00 ou 00.000.000/0000-00"
                       maxlength="18"
+                      :required="form.my_role === 'contratante'"
                     />
+                    <p v-if="form.my_role === 'contratante'" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Obrigatório para que o fornecedor consiga enviar notas fiscais.
+                    </p>
+                  </div>
+                  
+                  <!-- Dia do Envio da NF (Apenas para Contratante) -->
+                  <div v-if="form.my_role === 'contratante'">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Dia Limite para Envio da NF
+                    </label>
+                    <Input
+                      v-model.number="form.invoice_due_day"
+                      type="number"
+                      min="1"
+                      max="31"
+                      placeholder="Ex: 20"
+                    />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Dia máximo do mês para o fornecedor subir a nota (gera alertas).
+                    </p>
                   </div>
                 </div>
               </div>

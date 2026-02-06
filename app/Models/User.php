@@ -114,7 +114,9 @@ final class User extends Authenticatable implements FilamentUser, MustVerifyEmai
         'id',
         'created_at',
         'updated_at',
-
+        'segment',
+        'phone',
+        'company_size',
     ];
 
     /**

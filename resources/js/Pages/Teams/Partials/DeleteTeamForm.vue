@@ -1,9 +1,9 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
 import { inject, ref } from 'vue'
-import ActionSection from '@/components/ActionSection.vue'
-import ConfirmationModal from '@/components/ConfirmationModal.vue'
-import Button from '@/components/ui/button/Button.vue'
+import ActionSection from '@/Components/ActionSection.vue'
+import ConfirmationModal from '@/Components/ConfirmationModal.vue'
+import Button from '@/Components/ui/button/Button.vue'
 
 const props = defineProps({
   team: Object,
@@ -26,24 +26,23 @@ function deleteTeam() {
 <template>
   <ActionSection>
     <template #title>
-      Delete Team
+      Excluir Equipe
     </template>
 
     <template #description>
-      Permanently delete this team.
+      Excluir permanentemente esta equipe.
     </template>
 
     <template #content>
-      <div class="max-w-xl text-sm">
-        Once a team is deleted, all of its resources and data will be
-        permanently deleted. Before deleting this team, please download
-        any data or information regarding this team that you wish to
-        retain.
+      <div class="max-w-xl text-sm text-gray-600 dark:text-gray-400">
+        Uma vez que uma equipe é excluída, todos os seus recursos e dados serão
+        excluídos permanentemente. Antes de excluir esta equipe, por favor, baixe
+        quaisquer dados ou informações sobre esta equipe que você deseja manter.
       </div>
 
       <div class="mt-5">
         <Button variant="destructive" @click="confirmTeamDeletion">
-          Delete Team
+          Excluir Equipe
         </Button>
       </div>
 
@@ -53,13 +52,12 @@ function deleteTeam() {
         @close="confirmingTeamDeletion = false"
       >
         <template #title>
-          Delete Team
+          Excluir Equipe
         </template>
 
         <template #content>
-          Are you sure you want to delete this team? Once a team is
-          deleted, all of its resources and data will be permanently
-          deleted.
+          Tem certeza de que deseja excluir esta equipe? Uma vez que uma equipe é
+          excluída, todos os seus recursos e dados serão excluídos permanentemente.
         </template>
 
         <template #footer>
@@ -67,7 +65,7 @@ function deleteTeam() {
             variant="secondary"
             @click="confirmingTeamDeletion = false"
           >
-            Cancel
+            Cancelar
           </Button>
 
           <Button
@@ -77,7 +75,7 @@ function deleteTeam() {
             :disabled="form.processing"
             @click="deleteTeam"
           >
-            Delete Team
+            Excluir Equipe
           </Button>
         </template>
       </ConfirmationModal>

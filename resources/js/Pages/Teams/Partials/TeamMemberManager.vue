@@ -2,12 +2,12 @@
 import { router, useForm, usePage } from '@inertiajs/vue3'
 import { inject, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import ActionSection from '@/components/ActionSection.vue'
-import FormSection from '@/components/FormSection.vue'
-import InputError from '@/components/InputError.vue'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import ActionSection from '@/Components/ActionSection.vue'
+import FormSection from '@/Components/FormSection.vue'
+import InputError from '@/Components/InputError.vue'
+import { Avatar, AvatarFallback, AvatarImage } from '@/Components/ui/avatar'
 
-import Button from '@/components/ui/button/Button.vue'
+import Button from '@/Components/ui/button/Button.vue'
 import {
   Dialog,
   DialogContent,
@@ -15,10 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import Input from '@/components/ui/input/Input.vue'
-import Label from '@/components/ui/label/Label.vue'
-import Separator from '@/components/ui/separator/Separator.vue'
+} from '@/Components/ui/dialog'
+import Input from '@/Components/ui/input/Input.vue'
+import Label from '@/Components/ui/label/Label.vue'
+import Separator from '@/Components/ui/separator/Separator.vue'
 
 const props = defineProps({
   team: Object,
@@ -53,7 +53,7 @@ function addTeamMember() {
     preserveScroll: true,
     onSuccess: () => {
       addTeamMemberForm.reset()
-      toast.success('Team member added')
+      toast.success('Membro da equipe adicionado')
     },
   })
 }
@@ -61,7 +61,7 @@ function addTeamMember() {
 function cancelTeamInvitation(invitation) {
   router.delete(route('team-invitations.destroy', invitation), {
     preserveScroll: true,
-    onSuccess: () => toast.success('Team invitation canceled'),
+    onSuccess: () => toast.success('Convite de equipe cancelado'),
   })
 }
 
@@ -78,7 +78,7 @@ function updateRole() {
       preserveScroll: true,
       onSuccess: () => {
         currentlyManagingRole.value = false
-        toast.success('Team member role updated')
+        toast.success('Função de membro da equipe atualizada')
       },
     },
   )
@@ -94,7 +94,7 @@ function leaveTeam() {
     {
       onSuccess: () => {
         confirmingLeavingTeam.value = false
-        toast.success('Team left successfully')
+        toast.success('Saiu da equipe com sucesso')
       },
     },
   )
@@ -116,7 +116,7 @@ function removeTeamMember() {
       preserveState: true,
       onSuccess: () => {
         teamMemberBeingRemoved.value = null
-        toast.success('Team member removed successfully')
+        toast.success('Membro da equipe removido com sucesso')
       },
     },
   )
@@ -132,15 +132,14 @@ function displayableRole(role) {
     <div v-if="userPermissions.canAddTeamMembers">
       <Separator class="my-8 hidden sm:block" />
 
-      <!-- Add Team Member -->
       <FormSection @submitted="addTeamMember">
         <template #title>
-          Add Team Member
+          Adicionar Membro da Equipe
         </template>
 
         <template #description>
-          Add a new team member to your team, allowing them to
-          collaborate with you.
+          Adicione um novo membro à sua equipe, permitindo que eles colaborem
+          com você.
         </template>
 
         <template #form>
@@ -148,14 +147,14 @@ function displayableRole(role) {
             <div
               class="max-w-xl text-sm text-gray-600 dark:text-gray-400"
             >
-              Please provide the email address of the person you
-              would like to add to this team.
+              Por favor, forneça o endereço de e-mail da pessoa que você
+              gostaria de adicionar a esta equipe.
             </div>
           </div>
 
           <!-- Member Email -->
           <div class="col-span-6 sm:col-span-4">
-            <Label for="email">Email</Label>
+            <Label for="email">E-mail</Label>
             <Input
               id="email"
               v-model="addTeamMemberForm.email"
@@ -173,7 +172,7 @@ function displayableRole(role) {
             v-if="availableRoles.length > 0"
             class="col-span-6 lg:col-span-4"
           >
-            <Label for="roles">Role</Label>
+            <Label for="roles">Função</Label>
 
             <div
               class="relative z-0 mt-1 cursor-pointer rounded-lg border"
@@ -252,7 +251,7 @@ function displayableRole(role) {
             :class="{ 'opacity-25': addTeamMemberForm.processing }"
             :disabled="addTeamMemberForm.processing"
           >
-            Add
+            Adicionar
           </Button>
         </template>
       </FormSection>
@@ -269,13 +268,13 @@ function displayableRole(role) {
       <!-- Team Member Invitations -->
       <ActionSection class="mt-10 sm:mt-0">
         <template #title>
-          Pending Team Invitations
+          Convites de Equipe Pendentes
         </template>
 
         <template #description>
-          These people have been invited to your team and have been
-          sent an invitation email. They may join the team by
-          accepting the email invitation.
+          Essas pessoas foram convidadas para sua equipe e enviadas um
+          e-mail de convite. Elas podem se juntar à equipe aceitando o
+          convite por e-mail.
         </template>
 
         <!-- Pending Team Member Invitation List -->
@@ -297,7 +296,7 @@ function displayableRole(role) {
                   class="ms-6 cursor-pointer text-sm text-red-500 focus:outline-hidden"
                   @click="cancelTeamInvitation(invitation)"
                 >
-                  Cancel
+                  Cancelar
                 </button>
               </div>
             </div>
@@ -312,11 +311,11 @@ function displayableRole(role) {
       <!-- Manage Team Members -->
       <ActionSection class="mt-10 sm:mt-0">
         <template #title>
-          Team Members
+          Membros da Equipe
         </template>
 
         <template #description>
-          All of the people that are part of this team.
+          Todas as pessoas que fazem parte desta equipe.
         </template>
 
         <!-- Team Member List -->
@@ -368,7 +367,7 @@ function displayableRole(role) {
                   class="ms-6 cursor-pointer text-sm text-red-500"
                   @click="confirmLeavingTeam"
                 >
-                  Leave
+                  Sair
                 </button>
 
                 <!-- Remove Team Member -->
@@ -379,7 +378,7 @@ function displayableRole(role) {
                   class="ms-6 cursor-pointer text-sm text-red-500"
                   @click="confirmTeamMemberRemoval(user)"
                 >
-                  Remove
+                  Remover
                 </button>
               </div>
             </div>
@@ -395,9 +394,9 @@ function displayableRole(role) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Manage Role</DialogTitle>
+          <DialogTitle>Gerenciar Função</DialogTitle>
           <DialogDescription>
-            Manage the role of this team member.
+            Gerencie a função deste membro da equipe.
           </DialogDescription>
         </DialogHeader>
 
@@ -470,7 +469,7 @@ function displayableRole(role) {
             variant="secondary"
             @click="currentlyManagingRole = false"
           >
-            Cancel
+            Cancelar
           </Button>
 
           <Button
@@ -479,7 +478,7 @@ function displayableRole(role) {
             :disabled="updateRoleForm.processing"
             @click="updateRole"
           >
-            Save
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -492,9 +491,9 @@ function displayableRole(role) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Leave Team</DialogTitle>
+          <DialogTitle>Sair da Equipe</DialogTitle>
           <DialogDescription>
-            Are you sure you would like to leave this team?
+            Tem certeza de que gostaria de sair desta equipe?
           </DialogDescription>
         </DialogHeader>
 
@@ -503,7 +502,7 @@ function displayableRole(role) {
             variant="secondary"
             @click="confirmingLeavingTeam = false"
           >
-            Cancel
+            Cancelar
           </Button>
 
           <Button
@@ -513,7 +512,7 @@ function displayableRole(role) {
             :disabled="leaveTeamForm.processing"
             @click="leaveTeam"
           >
-            Leave
+            Sair
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -526,10 +525,9 @@ function displayableRole(role) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Remove Team Member</DialogTitle>
+          <DialogTitle>Remover Membro da Equipe</DialogTitle>
           <DialogDescription>
-            Are you sure you would like to remove this person from
-            the team?
+            Tem certeza de que gostaria de remover esta pessoa da equipe?
           </DialogDescription>
         </DialogHeader>
 
@@ -538,7 +536,7 @@ function displayableRole(role) {
             variant="secondary"
             @click="teamMemberBeingRemoved = null"
           >
-            Cancel
+            Cancelar
           </Button>
 
           <Button
@@ -550,7 +548,7 @@ function displayableRole(role) {
             :disabled="removeTeamMemberForm.processing"
             @click="removeTeamMember"
           >
-            Remove
+            Remover
           </Button>
         </DialogFooter>
       </DialogContent>

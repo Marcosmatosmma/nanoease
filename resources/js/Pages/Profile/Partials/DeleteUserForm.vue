@@ -23,29 +23,28 @@ function deleteUser(password) {
 <template>
   <ActionSection>
     <template #title>
-      Delete Account
+      Excluir Conta
     </template>
 
     <template #description>
-      Permanently delete your account.
+      Excluir permanentemente sua conta.
     </template>
 
     <template #content>
       <div class="max-w-xl text-sm text-gray-600 dark:text-gray-400">
-        Once your account is deleted, all of its resources and data will
-        be permanently deleted. Before deleting your account, please
-        download any data or information that you wish to retain.
+        Uma vez que sua conta for excluída, todos os seus recursos e dados serão excluídos permanentemente.
+        Antes de excluir sua conta, faça o download de quaisquer dados ou informações que deseja manter.
       </div>
 
       <div class="mt-5">
         <ConfirmsPassword
-          title="Delete Account"
-          content="Are you sure you want to delete your account? Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm."
-          button="Delete Account"
+          title="Excluir Conta"
+          content="Tem certeza de que deseja excluir sua conta? Uma vez que sua conta for excluída, todos os seus recursos e dados serão excluídos permanentemente. Por favor, insira sua senha para confirmar."
+          button="Excluir Conta"
           @confirmed="deleteUser"
         >
           <Button variant="destructive">
-            Delete Account
+            Excluir Conta
           </Button>
         </ConfirmsPassword>
       </div>

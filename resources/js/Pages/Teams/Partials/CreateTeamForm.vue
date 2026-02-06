@@ -25,16 +25,16 @@ function createTeam() {
 <template>
   <FormSection @submitted="createTeam">
     <template #title>
-      Team Details
+      Detalhes da Equipe
     </template>
 
     <template #description>
-      Create a new team to collaborate with others on projects.
+      Crie uma nova equipe para colaborar com outros em projetos.
     </template>
 
     <template #form>
       <div class="col-span-6">
-        <Label> Team Owner </Label>
+        <Label> Proprietário da Equipe </Label>
 
         <div class="flex items-center mt-2">
           <Avatar>
@@ -61,7 +61,7 @@ function createTeam() {
       </div>
 
       <div class="col-span-6 sm:col-span-4">
-        <Label for="name" value=""> Team Name </Label>
+        <Label for="name" value=""> Nome da Equipe </Label>
         <Input
           id="name"
           v-model="form.name"
@@ -78,7 +78,7 @@ function createTeam() {
         :class="{ 'opacity-25': form.processing }"
         :disabled="form.processing"
       >
-        Create
+        Criar
       </Button>
     </template>
   </FormSection>

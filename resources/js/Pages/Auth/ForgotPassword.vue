@@ -20,7 +20,7 @@ defineProps({
 })
 
 useSeoMetaTags({
-  title: 'Forgot Password',
+  title: 'Esqueci a Senha',
 })
 
 const route = inject('route')
@@ -41,15 +41,15 @@ function submit() {
           <AuthenticationCardLogo />
         </CardTitle>
         <CardDescription class="text-center text-2xl">
-          Reset your password
+          Redefina sua senha
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Forgot your password? No problem. Just let us know your
-          email address and we will email you a password reset link
-          that will allow you to choose a new one.
+          Esqueceu sua senha? Sem problemas. Apenas nos informe seu endereço de email
+          e enviaremos um link de redefinição de senha
+          que permitirá que você escolha uma nova.
         </div>
 
         <div
@@ -79,7 +79,7 @@ function submit() {
               :class="{ 'opacity-25': form.processing }"
               :disabled="form.processing"
             >
-              Email Password Reset Link
+              Enviar Link de Redefinição
             </Button>
           </div>
         </form>

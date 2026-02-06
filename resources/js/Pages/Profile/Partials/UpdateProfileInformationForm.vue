@@ -23,7 +23,7 @@ const verificationLinkSent = ref(null)
 const photoPreview = ref(null)
 const photoInput = ref(null)
 
-function updateProfileInformation() {
+  function updateProfileInformation() {
   if (photoInput.value) {
     form.photo = photoInput.value.files[0]
   }
@@ -33,7 +33,7 @@ function updateProfileInformation() {
     preserveScroll: true,
     onSuccess: () => {
       clearPhotoFileInput()
-      toast.success('Profile information updated')
+      toast.success('Informações do perfil atualizadas')
     },
   })
 }
@@ -67,7 +67,7 @@ function deletePhoto() {
     onSuccess: () => {
       photoPreview.value = null
       clearPhotoFileInput()
-      toast.success('Photo deleted')
+      toast.success('Foto removida')
     },
   })
 }
@@ -82,11 +82,11 @@ function clearPhotoFileInput() {
 <template>
   <FormSection @submitted="updateProfileInformation">
     <template #title>
-      Profile Information
+      Informações do Perfil
     </template>
 
     <template #description>
-      Update your account's profile information and email address.
+      Atualize as informações do seu perfil e endereço de e-mail.
     </template>
 
     <template #form>
@@ -104,7 +104,7 @@ function clearPhotoFileInput() {
           @change="updatePhotoPreview"
         >
 
-        <Label for="photo">Photo</Label>
+        <Label for="photo">Foto</Label>
 
         <!-- Current Profile Photo -->
         <div v-show="!photoPreview" class="mt-2">
@@ -129,7 +129,7 @@ function clearPhotoFileInput() {
           type="button"
           @click.prevent="selectNewPhoto"
         >
-          Select A New Photo
+          Selecionar Nova Foto
         </Button>
 
         <Button
@@ -139,7 +139,7 @@ function clearPhotoFileInput() {
           class="mt-2"
           @click.prevent="deletePhoto"
         >
-          Remove Photo
+          Remover Foto
         </Button>
 
         <InputError :message="form.errors.photo" class="mt-2" />
@@ -147,7 +147,7 @@ function clearPhotoFileInput() {
 
       <!-- Name -->
       <div class="col-span-6 sm:col-span-4">
-        <Label for="name">Name</Label>
+        <Label for="name">Nome</Label>
         <Input
           id="name"
           v-model="form.name"
@@ -161,7 +161,7 @@ function clearPhotoFileInput() {
 
       <!-- Email -->
       <div class="col-span-6 sm:col-span-4">
-        <Label for="email">Email</Label>
+        <Label for="email">E-mail</Label>
         <Input
           id="email"
           v-model="form.email"
@@ -180,7 +180,7 @@ function clearPhotoFileInput() {
           "
         >
           <p class="mt-2 text-sm">
-            Your email address is unverified.
+            Seu endereço de e-mail não foi verificado.
 
             <Link
               :href="route('verification.send')"
@@ -189,7 +189,7 @@ function clearPhotoFileInput() {
               class="rounded-md text-sm underline focus:outline-hidden focus:ring-2 focus:ring-offset-2"
               @click.prevent="sendEmailVerification"
             >
-              Click here to re-send the verification email.
+              Clique aqui para reenviar o e-mail de verificação.
             </Link>
           </p>
 
@@ -197,8 +197,7 @@ function clearPhotoFileInput() {
             v-show="verificationLinkSent"
             class="mt-2 text-sm font-medium"
           >
-            A new verification link has been sent to your email
-            address.
+            Um novo link de verificação foi enviado para o seu endereço de e-mail.
           </div>
         </div>
       </div>
@@ -209,7 +208,7 @@ function clearPhotoFileInput() {
         :class="{ 'opacity-25': form.processing }"
         :disabled="form.processing"
       >
-        Save
+        Salvar
       </Button>
     </template>
   </FormSection>

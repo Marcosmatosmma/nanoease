@@ -57,7 +57,9 @@ final class FortifyServiceProvider extends ServiceProvider
             'status' => session('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('Auth/Register'));
+        Fortify::registerView(fn () => Inertia::render('Auth/Register', [
+            'availableOauthProviders' => (new ActiveOauthProviderAction())->handle(),
+        ]));
 
         Fortify::verifyEmailView(fn () => Inertia::render('Auth/VerifyEmail', [
             'status' => session('status'),

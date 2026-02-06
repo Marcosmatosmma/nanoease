@@ -26,7 +26,7 @@ function updatePassword() {
     preserveScroll: true,
     onSuccess: () => {
       form.reset()
-      toast.success('Password updated')
+      toast.success('Senha atualizada')
     },
     onError: () => {
       if (form.errors.password) {
@@ -46,16 +46,16 @@ function updatePassword() {
 <template>
   <FormSection @submitted="updatePassword">
     <template #title>
-      Update Password
+      Atualizar Senha
     </template>
 
     <template #description>
-      Ensure your account is using a long, random password to stay secure.
+      Garanta que sua conta use uma senha longa e aleatória para se manter segura.
     </template>
 
     <template #form>
       <div class="col-span-6 sm:col-span-4">
-        <Label for="password">New Password</Label>
+        <Label for="password">Nova Senha</Label>
         <Input
           id="password"
           ref="passwordInput"
@@ -68,7 +68,7 @@ function updatePassword() {
       </div>
 
       <div class="col-span-6 sm:col-span-4">
-        <Label for="password_confirmation">Confirm Password</Label>
+        <Label for="password_confirmation">Confirmar Senha</Label>
         <Input
           id="password_confirmation"
           v-model="form.password_confirmation"
@@ -88,7 +88,7 @@ function updatePassword() {
         :class="{ 'opacity-25': form.processing }"
         :disabled="form.processing"
       >
-        Save
+        Salvar
       </Button>
     </template>
   </FormSection>

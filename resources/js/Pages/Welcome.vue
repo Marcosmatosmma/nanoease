@@ -1,17 +1,17 @@
 <script setup>
 import { Icon } from '@iconify/vue'
 import { Link } from '@inertiajs/vue3'
-import FeaturesCard from '@/components/FeaturesCard.vue'
-import PricingCard from '@/components/PricingCard.vue'
-import Terminal from '@/components/Terminal.vue'
-import Accordion from '@/components/ui/accordion/Accordion.vue'
-import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
-import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
-import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Button from '@/components/ui/button/Button.vue'
+import FeaturesCard from '@/Components/FeaturesCard.vue'
+import PricingCard from '@/Components/PricingCard.vue'
+import Terminal from '@/Components/Terminal.vue'
+import Accordion from '@/Components/ui/accordion/Accordion.vue'
+import AccordionContent from '@/Components/ui/accordion/AccordionContent.vue'
+import AccordionItem from '@/Components/ui/accordion/AccordionItem.vue'
+import AccordionTrigger from '@/Components/ui/accordion/AccordionTrigger.vue'
+import Badge from '@/Components/ui/badge/Badge.vue'
+import Button from '@/Components/ui/button/Button.vue'
 import { useSeoMetaTags } from '@/composables/useSeoMetaTags.js'
-import WebLayout from '@/layouts/WebLayout.vue'
+import WebLayout from '@/Layouts/WebLayout.vue'
 
 const props = defineProps({
   canLogin: {
@@ -24,6 +24,10 @@ const props = defineProps({
     type: Object,
     default: () => null,
   },
+  plans: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 useSeoMetaTags(props.seo)
@@ -31,67 +35,67 @@ useSeoMetaTags(props.seo)
 const features = [
   {
     icon: '🚀',
-    title: '10x Dev Experience',
+    title: 'Experiência Dev 10x',
     description:
-            'Ship faster with opinionated Laravel Pint, maximum PHPStan level, and Rector for enhanced code quality and developer productivity.',
+            'Entregue mais rápido com Laravel Pint, PHPStan nível máximo e Rector para qualidade de código e produtividade aprimoradas.',
   },
   {
     icon: '🐳',
-    title: 'Production Docker Ready',
+    title: 'Docker Pronto para Produção',
     description:
-            'Optimized Docker images with Laravel Octane for lightning-fast development and deployment.',
+            'Imagens Docker otimizadas com Laravel Octane para desenvolvimento e deployment ultra-rápidos.',
   },
   {
     icon: '🔑',
-    title: 'Advanced Authentication',
+    title: 'Autenticação Avançada',
     description:
-            'Complete authentication system with social login, and role-based access control.',
+            'Sistema completo de autenticação com login social e controle de acesso baseado em funções (RBAC).',
   },
   {
     icon: '💳',
-    title: 'Payment Ready',
+    title: 'Pagamentos Prontos',
     description:
-            'Integrated Laravel Cashier for subscription billing and payment processing so you can focus on building your product.',
+            'Laravel Cashier integrado para cobrança de assinaturas e processamento de pagamentos para que você foque no produto.',
   },
   {
     icon: '🌐',
-    title: 'API Ready',
+    title: 'Pronto para API',
     description:
-            'RESTful API endpoints with Laravel Sanctum authentication and comprehensive documentation.',
+            'Endpoints API RESTful com autenticação Laravel Sanctum e documentação abrangente.',
   },
   {
     icon: '🎨',
-    title: 'Customizable UI',
+    title: 'Interface Customizável',
     description:
-            'Built with shadcn/ui components, making UI customization a breeze. Easily modify themes, styles, and components to match your brand.',
+            'Construído com componentes shadcn/ui, tornando a customização fácil. Modifique temas, estilos e componentes para sua marca.',
   },
   {
     icon: '🧠',
-    title: 'AI Integration Ready',
+    title: 'Integração com IA',
     description:
-            'Pre-configured LLM integrations for OpenAI, Anthropic, and more. Build AI-powered features into your app with minimal setup.',
+            'Integrações LLM pré-configuradas para OpenAI, Anthropic e mais. Crie recursos de IA no seu app com configuração mínima.',
   },
   {
     icon: '📊',
-    title: 'FilamentPHP Admin',
+    title: 'Admin FilamentPHP',
     description:
-            'Beautiful admin panel powered by FilamentPHP with CRUD operations, charts, and detailed analytics.',
+            'Lindo painel administrativo powered by FilamentPHP com operações CRUD, gráficos e análises detalhadas.',
   },
   {
     icon: '✨',
-    title: 'Evolving Features',
+    title: 'Recursos em Evolução',
     description:
-            'This is just the beginning. Regular updates bring new features, integrations, and improvements to supercharge your development.',
+            'Isso é apenas o começo. Atualizações regulares trazem novos recursos, integrações e melhorias para turbinar seu desenvolvimento.',
   },
 ]
 
 const pricingFeatures = [
-  'Production-ready Docker setup',
-  'Advanced authentication system',
-  'AI Integrations',
-  'Payment integration ready',
-  'API endpoints with Sanctum',
-  'Comprehensive documentation',
+  'Setup Docker pronto para produção',
+  'Sistema de autenticação avançado',
+  'Integrações de IA',
+  'Integração de pagamentos pronta',
+  'Endpoints de API com Sanctum',
+  'Documentação abrangente',
 ]
 const sponsorLinks = {
   github: 'https://github.com/sponsors/pushpak1300',
@@ -101,21 +105,21 @@ const sponsorLinks = {
 const faqItems = [
   {
     value: 'item-1',
-    title: 'Is Larasonic really free?',
+    title: 'O Larasonic é realmente gratuito?',
     content:
-            'Yes! Larasonic is completely free and open source under the MIT license. You can use it for personal or commercial projects without any restrictions. Feel free to star the repo for showing your intrest.',
+            'Sim! O Larasonic é completamente gratuito e open source sob a licença MIT. Você pode usá-lo para projetos pessoais ou comerciais sem restrições.',
   },
   {
     value: 'item-2',
-    title: 'How can I contribute?',
+    title: 'Como posso contribuir?',
     content:
-            'You can contribute by submitting pull requests, reporting bugs, suggesting features, or helping with documentation. Every contribution is valuable!',
+            'Você pode contribuir enviando pull requests, reportando bugs, sugerindo recursos ou ajudando na documentação. Toda contribuição é valiosa!',
   },
   {
     value: 'item-3',
-    title: 'Why should I sponsor?',
+    title: 'Por que devo patrocinar?',
     content:
-            'Sponsoring helps ensure the project\'s long-term sustainability. Your support enables continued maintenance, new features, and improvements that benefit the entire community.',
+            'Patrocinar ajuda a garantir a sustentabilidade de longo prazo do projeto. Seu suporte permite manutenção contínua e novos recursos.',
   },
 ]
 
@@ -146,11 +150,11 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
             class="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
             :style="{ contain: 'layout paint' }"
           >
-            <span class="block text-foreground">Modern Laravel</span>
+            <span class="block text-foreground">O Melhor Sistema</span>
             <span
               class="mt-2 block bg-linear-to-r from-red-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent"
             >
-              SaaS Starter Kit
+              Para o Seu Negócio
             </span>
           </h1>
         </div>
@@ -161,9 +165,8 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
           :style="{ contain: 'layout paint' }"
           fetchpriority="high"
         >
-          Ship faster production-ready applications 10x faster with
-          starter kit powered by Laravel Jetstream, Inertia V2, and
-          Shadcn/ui.
+          Gerencie seus contratos, automações e equipe com facilidade.
+          Comece seu teste grátis de 14 dias hoje.
         </p>
 
         <!-- CTA Buttons -->
@@ -177,7 +180,7 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
             size="lg"
             class="w-full sm:w-auto"
           >
-            View Demo
+            Ver Demonstração
           </Button>
           <Button
             as="a"
@@ -199,7 +202,7 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
         <!-- Trust Badges -->
         <div class="mt-16 sm:mt-24">
           <p class="text-sm text-muted-foreground">
-            Trusted by developers worldwide
+            Confiado por desenvolvedores no mundo todo
           </p>
           <div
             class="mt-4 flex flex-wrap items-center justify-center gap-6 sm:gap-8"
@@ -240,11 +243,10 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
       <h2
         class="text-center text-2xl font-bold tracking-tight sm:text-4xl"
       >
-        Features ✨
+        Recursos ✨
       </h2>
       <p class="mx-auto mt-4 max-w-2xl text-center text-muted-foreground">
-        Everything you need to ship faste to production without any
-        hassle.
+        Tudo o que você precisa para entregar mais rápido para produção sem complicações.
       </p>
 
       <div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -268,7 +270,7 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
             class="size-4"
             aria-hidden="true"
           />
-          Documentation
+          Documentação
         </Button>
         <Button
           variant="secondary"
@@ -294,71 +296,61 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
           <h2
             class="text-center text-2xl font-bold tracking-tight sm:text-4xl"
           >
-            Proudly Open Source 🤑
+            Orgulhosamente Open Source 🤑
           </h2>
           <p
             class="mx-auto mt-4 max-w-2xl text-center text-muted-foreground"
           >
-            Larasonic is and will always be open source. No hidden
-            fees, no premium features.
+            Larasonic é e sempre será open source. Sem taxas escondidas, sem recursos premium.
           </p>
         </div>
 
-        <!-- Pricing Card -->
-        <PricingCard
-          class="mx-auto mt-16"
-          :features="pricingFeatures"
-          :price="0"
-          plan="What's included ?"
-          billing-period="Free Forever"
-        >
-          <template #action>
-            <Button :as="Link" :href="route('dashboard')">
-              Get Started
-            </Button>
-          </template>
-          <template #footer>
-            <div
-              class="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <p class="text-sm">
-                Want to support the development?
-              </p>
-              <div class="flex gap-4">
-                <Button
-                  variant="outline"
-                  as="a"
-                  :href="sponsorLinks.github"
-                  target="_blank"
-                >
-                  <Icon
-                    icon="mdi:github"
-                    class="mr-2 size-4"
-                    aria-hidden="true"
-                  />
-                  Sponsor
-                </Button>
-                <Button
-                  variant="outline"
-                  as="a"
-                  :href="sponsorLinks.x"
-                  target="_blank"
-                >
-                  <Icon
-                    icon="ri:twitter-x-line"
-                    class="mr-2 size-4"
-                    aria-hidden="true"
-                  />
-                  Follow Me
-                </Button>
+        <!-- Pricing Cards -->
+        <div class="mt-16 grid gap-8 sm:grid-cols-1 lg:grid-cols-2 max-w-5xl mx-auto">
+          <PricingCard
+            v-for="plan in plans"
+            :key="plan.id"
+            class="mx-auto"
+            :features="plan.features || []"
+            :price="Number(plan.price) || 0"
+            :plan="plan.name"
+            :description="plan.description"
+            :billing-period="plan.price ? 'Mês' : ''"
+          >
+            <template #pricing v-if="!plan.price">
+              <div>
+                <h4 class="text-3xl font-bold">Fale Conosco</h4>
+                <p class="text-sm text-muted-foreground mt-2">
+                  Sob medida para seu negócio
+                </p>
               </div>
-            </div>
-          </template>
-        </PricingCard>
+            </template>
+
+            <template #action>
+              <Button
+                v-if="plan.price"
+                :as="Link"
+                :href="route('register')"
+                class="w-full"
+              >
+                Teste Grátis de 14 Dias
+              </Button>
+              <Button
+                v-else
+                as="a"
+                href="mailto:contact@larasonic.com"
+                variant="outline"
+                class="w-full"
+              >
+                Falar com Vendas
+              </Button>
+            </template>
+          </PricingCard>
+        </div>
         <!-- FAQ Section -->
         <div class="mx-auto mt-16 text-center">
           <h2 class="text-2xl font-bold">
-            Frequently Asked Questions
+            Perguntas Frequentes
           </h2>
           <Accordion
             type="single"
@@ -391,12 +383,11 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
             <h2
               class="text-3xl font-bold tracking-tight sm:text-6xl"
             >
-              Ready to ship faster?
+              Pronto para entregar mais rápido?
             </h2>
             <p class="mx-auto mt-4 max-w-xl text-lg">
-              You're already blazing fast with Laravel.<br>
-              Larasonic is about to make your shipping speed
-              supersonic. 🚀
+              Você já é rápido com Laravel.<br>
+              Larasonic vai tornar sua entrega supersônica. 🚀
             </p>
             <div class="mt-8 flex justify-center gap-4">
               <Button
@@ -405,7 +396,7 @@ const githubUrl = 'https://github.com/shipfastlabs/larasonic-vue'
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                View on GitHub
+                Ver no GitHub
               </Button>
             </div>
           </div>

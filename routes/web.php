@@ -13,6 +13,7 @@ use App\Domain\AI\Controllers\AIAssistantController;
 
 require app_path('Domain/Automations/Routes/webAutomations.php');
 require app_path('Domain/Integrations/Routes/webIntegrations.php');
+require app_path('Domain/Automations/Http/Routes/webHttp.php');
 require app_path('Domain/Tasks/Routes/webTasks.php');
 require app_path('Domain/Contracts/Routes/webContracts.php');
 
@@ -34,17 +35,23 @@ Route::prefix('auth')->group(
 );
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
-    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    // Onboarding
+    Route::get('/onboarding', [App\Http\Controllers\OnboardingController::class, 'index'])->name('onboarding.index');
+    Route::post('/onboarding', [App\Http\Controllers\OnboardingController::class, 'store'])->name('onboarding.store');
 
-    Route::delete('/auth/destroy/{provider}', [OauthController::class, 'destroy'])->name('oauth.destroy');
+    Route::middleware(['onboarding'])->group(function () {
+        Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-
-    Route::resource('/subscriptions', SubscriptionController::class)
-        ->names('subscriptions')
-        ->only(['index', 'create', 'store', 'show']);
-
-    // API de IA
-    Route::post('/api/ai/improve-text', [AIAssistantController::class, 'improveText'])
-        ->name('api.ai.improve-text');
+        Route::delete('/auth/destroy/{provider}', [OauthController::class, 'destroy'])->name('oauth.destroy');
+    
+        Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    
+        Route::resource('/subscriptions', SubscriptionController::class)
+            ->names('subscriptions')
+            ->only(['index', 'create', 'store', 'show']);
+    
+        // API de IA
+        Route::post('/api/ai/improve-text', [AIAssistantController::class, 'improveText'])
+            ->name('api.ai.improve-text');
+    });
 });

@@ -14,9 +14,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/integrations/gmail/redirect', [GmailIntegrationController::class, 'redirect'])
             ->name('integrations.gmail.redirect');
 
-        Route::get('/integrations/gmail/callback', [GmailIntegrationController::class, 'callback'])
-            ->name('integrations.gmail.callback');
-
         Route::delete('/integrations/gmail/disconnect', [GmailIntegrationController::class, 'disconnect'])
             ->name('integrations.gmail.disconnect');
     });
+
+Route::get('/integrations/gmail/callback', [GmailIntegrationController::class, 'callback'])
+    ->name('integrations.gmail.callback');

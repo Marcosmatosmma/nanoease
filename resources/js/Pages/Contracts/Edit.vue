@@ -1492,16 +1492,16 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
+import Input from '@/Components/ui/input/Input.vue'
 import { Icon } from '@iconify/vue'
-import DoughnutChart from '@/components/charts/DoughnutChart.vue'
-import BarChart from '@/components/charts/BarChart.vue'
-import { computed } from 'vue'
+import DoughnutChart from '@/Components/charts/DoughnutChart.vue'
+import BarChart from '@/Components/charts/BarChart.vue'
+
 
 const props = defineProps({
   contract: Object,
@@ -1646,6 +1646,9 @@ const fetchCnpjDataSilent = async () => {
         form.invoice_recipient_name = data.data.razao_social
       }
 
+      // Salvar retorno bruto da API
+      form.invoice_cnpj_api_data = data.raw
+
       cnpjApiMessage.value = 'Dados carregados com sucesso!'
       setTimeout(() => {
         cnpjApiMessage.value = ''
@@ -1657,6 +1660,14 @@ const fetchCnpjDataSilent = async () => {
     loadingCnpjData.value = false
   }
 }
+
+// Tentar buscar dados novamente ao montar se estiver faltando
+onMounted(() => {
+  if (form.invoice_recipient_cnpj && !form.invoice_cnpj_api_data) {
+    console.log('Dados da API CNPJ faltando no edit. Buscando novamente...')
+    fetchCnpjDataSilent()
+  }
+})
 
 const submit = () => {
   form.put(route('contracts.update', props.contract.id))

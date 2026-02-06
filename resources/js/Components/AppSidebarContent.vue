@@ -10,7 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
+} from '@/Components/ui/sidebar'
 
 const route = inject('route')
 const mode = useColorMode({
@@ -20,7 +20,7 @@ const mode = useColorMode({
 
 const navigationConfig = [
   {
-    label: 'Platform',
+    label: 'Plataforma',
     items: [
       {
         name: 'Dashboard',
@@ -53,48 +53,9 @@ const navigationConfig = [
         route: 'integrations.index',
       },
       {
-        name: 'Settings',
+        name: 'Configurações',
         icon: 'lucide:settings',
         route: 'profile.show',
-      },
-      {
-        name: 'Chat',
-        icon: 'lucide:message-circle',
-        route: 'chat.index',
-      },
-    ],
-  },
-  {
-    label: 'API',
-    items: [
-      {
-        name: 'API Tokens',
-        icon: 'lucide:key',
-        route: 'api-tokens.index',
-      },
-      {
-        name: 'API Documentation',
-        icon: 'lucide:book-heart',
-        route: 'scribe',
-        external: true,
-      },
-    ],
-  },
-  {
-    label: null,
-    class: 'mt-auto',
-    items: [
-      {
-        name: 'Support',
-        icon: 'lucide:life-buoy',
-        href: 'https://github.com/shipfastlabs/larasonic-vue/issues',
-        external: true,
-      },
-      {
-        name: 'Documentation',
-        icon: 'lucide:book-marked',
-        href: 'https://docs.larasonic.com',
-        external: true,
       },
     ],
   },

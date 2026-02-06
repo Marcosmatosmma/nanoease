@@ -4,12 +4,12 @@ import CreateTeamForm from '@/Pages/teams/Partials/CreateTeamForm.vue'
 </script>
 
 <template>
-  <AppLayout title="Create Team">
+  <AppLayout title="Criar Equipe">
     <template #header>
       <h2
         class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200"
       >
-        Create Team
+        Criar Equipe
       </h2>
     </template>
 

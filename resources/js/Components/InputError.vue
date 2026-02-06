@@ -1,5 +1,5 @@
 <script setup>
-import Label from '@/components/ui/label/Label.vue'
+import Label from '@/Components/ui/label/Label.vue'
 import { cn } from '@/lib/utils'
 
 defineProps({

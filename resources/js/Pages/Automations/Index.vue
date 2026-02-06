@@ -1,13 +1,13 @@
 <script setup>
 import { Icon } from '@iconify/vue'
-import AppLayout from '@/layouts/AppLayout.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Card from '@/components/ui/card/Card.vue'
-import CardContent from '@/components/ui/card/CardContent.vue'
-import CardDescription from '@/components/ui/card/CardDescription.vue'
-import CardHeader from '@/components/ui/card/CardHeader.vue'
-import CardTitle from '@/components/ui/card/CardTitle.vue'
+import AppLayout from '@/Layouts/AppLayout.vue'
+import Badge from '@/Components/ui/badge/Badge.vue'
+import Button from '@/Components/ui/button/Button.vue'
+import Card from '@/Components/ui/card/Card.vue'
+import CardContent from '@/Components/ui/card/CardContent.vue'
+import CardDescription from '@/Components/ui/card/CardDescription.vue'
+import CardHeader from '@/Components/ui/card/CardHeader.vue'
+import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import { Link } from '@inertiajs/vue3'
 
 const props = defineProps({

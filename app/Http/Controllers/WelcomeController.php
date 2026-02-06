@@ -15,6 +15,7 @@ final class WelcomeController extends Controller
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
+            'plans' => \App\Models\Plan::where('is_active', true)->get(),
             'seo' => [
                 'title' => 'Home',
             ],

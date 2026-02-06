@@ -17,9 +17,11 @@ use App\Domain\Automations\Models\MassEmailSend;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use App\Domain\Automations\Http\Actions\ExecuteHttpRequestAction;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 final class AutomationController extends Controller
@@ -54,10 +56,182 @@ final class AutomationController extends Controller
             ->orderBy('title')
             ->get(['id', 'key', 'title', 'description', 'icon', 'category']);
 
+        // Injetando evento de HTTP Request manualmente para testes
+        $events->push([
+            'id' => 999,
+            'key' => 'http_request',
+            'title' => 'Requisição HTTP',
+            'description' => 'Faça chamadas GET/POST para APIs externas.',
+            'icon' => 'lucide:globe',
+            'category' => 'Integrações',
+        ]);
+
         return Inertia::render('Automations/SelectEvent', [
             'connectedEmail' => data_get($gmail?->metadata, 'email'),
             'hasGmail' => $gmail?->status === 'connected',
             'events' => $events,
+        ]);
+    }
+
+    public function httpRequest(): Response
+    {
+        return Inertia::render('Automations/WorkflowEditor');
+    }
+
+    public function testHttpRequest(Request $request): JsonResponse
+    {
+        $request->validate([
+            'url' => 'required|url',
+            'method' => 'required|in:GET,POST,PUT,DELETE',
+            'headers' => 'nullable|array',
+            'body' => 'nullable|string',
+        ]);
+
+        try {
+            $method = $request->input('method');
+            $url = $request->input('url');
+            $headers = $request->input('headers', []);
+            $body = $request->input('body');
+
+            // Prepara a requisição
+            $http = \Illuminate\Support\Facades\Http::withHeaders($headers);
+
+            // Se tiver body e for JSON, decodifica para array
+            $data = [];
+            if ($body) {
+                $decoded = json_decode($body, true);
+                $data = $decoded ?: [];
+            }
+
+            // Executa
+            $response = match ($method) {
+                'GET' => $http->get($url),
+                'POST' => $http->post($url, $data),
+                'PUT' => $http->put($url, $data),
+                'DELETE' => $http->delete($url, $data),
+                default => throw new \Exception('Método não suportado'),
+            };
+
+            return response()->json([
+                'status' => $response->status(),
+                'data' => $response->json(),
+                'headers' => $response->headers(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function testWorkflow(Request $request): JsonResponse
+    {
+        $request->validate([
+            'steps' => 'required|array',
+        ]);
+
+        $steps = $request->input('steps');
+        $context = []; // Armazena variáveis
+        $logs = [];
+
+        foreach ($steps as $step) {
+            $stepId = $step['id'];
+            $type = $step['type'];
+            $title = $step['title'];
+            $config = $step['config'] ?? [];
+
+            try {
+                $logEntry = [
+                    'step_id' => $stepId,
+                    'title' => $title,
+                    'type' => $type,
+                    'status' => 'pending',
+                    'output' => null,
+                ];
+
+                switch ($type) {
+                    case 'http_request':
+                        // Resolver variáveis n URL/Body (ex: {{user_id}})
+                        // Por simplicidade, faremos direto inicialmente
+                        $url = $config['url'] ?? '';
+                        $method = $config['method'] ?? 'GET';
+                        $body = $config['body'] ?? '';
+                        $headers = collect($config['headers'] ?? [])->mapWithKeys(fn($h) => [$h['key'] => $h['value']])->toArray();
+
+                        $http = \Illuminate\Support\Facades\Http::withHeaders($headers);
+                        
+                        $dataBody = [];
+                        if ($body) {
+                            $dataBody = json_decode($body, true) ?: [];
+                        }
+
+                        $response = match ($method) {
+                            'GET' => $http->get($url),
+                            'POST' => $http->post($url, $dataBody),
+                            'PUT' => $http->put($url, $dataBody),
+                            'DELETE' => $http->delete($url, $dataBody),
+                            default => $http->get($url),
+                        };
+
+                        $jsonResponse = $response->json();
+                        $context['_last_response'] = $jsonResponse;
+                        $logEntry['output'] = ['status' => $response->status(), 'data' => $jsonResponse];
+                        break;
+
+                    case 'extract_data':
+                        $jsonKey = $config['json_key'] ?? '';
+                        $varName = $config['variable_name'] ?? 'extracted_value';
+                        
+                        $lastResponse = $context['_last_response'] ?? [];
+                        $value = data_get($lastResponse, $jsonKey);
+                        
+                        $context[$varName] = $value;
+                        $logEntry['output'] = ['variable' => $varName, 'extracted_value' => $value];
+                        break;
+
+                    case 'link_contract':
+                        // Mock de busca
+                        // Em produção buscaria em Contract::where(...)
+                        $searchBy = $config['search_by'] ?? 'cpf_cnpj';
+                        $varValueVar = $config['value_variable'] ?? '';
+                        $searchValue = $context[$varValueVar] ?? 'N/A';
+
+                        // Mock finding a contract
+                        $contractId = rand(100, 999);
+                        $context['linked_contract_id'] = $contractId;
+                        
+                        $logEntry['output'] = [
+                            'message' => "Buscando contrato por $searchBy = $searchValue",
+                            'found_contract_id' => $contractId
+                        ];
+                        break;
+
+                    case 'send_email':
+                        $to = $config['to_email'] ?? '';
+                        $subject = $config['subject'] ?? '';
+                        // Simulação
+                        $logEntry['output'] = ['message' => "Email simulado para $to com assunto '$subject'"];
+                        break;
+                }
+
+                $logEntry['status'] = 'success';
+                $logs[] = $logEntry;
+
+            } catch (\Exception $e) {
+                $logs[] = [
+                    'step_id' => $stepId,
+                    'title' => $title,
+                    'status' => 'error',
+                    'error' => $e->getMessage()
+                ];
+                break; // Stop on error
+            }
+        }
+
+        return response()->json([
+            'logs' => $logs,
+            'final_context' => $context
         ]);
     }
 

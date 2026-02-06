@@ -2,15 +2,15 @@
 import { useForm } from '@inertiajs/vue3'
 import { inject } from 'vue'
 import { toast } from 'vue-sonner'
-import FormSection from '@/components/FormSection.vue'
-import InputError from '@/components/InputError.vue'
-import Avatar from '@/components/ui/avatar/Avatar.vue'
-import AvatarFallback from '@/components/ui/avatar/AvatarFallback.vue'
+import FormSection from '@/Components/FormSection.vue'
+import InputError from '@/Components/InputError.vue'
+import Avatar from '@/Components/ui/avatar/Avatar.vue'
+import AvatarFallback from '@/Components/ui/avatar/AvatarFallback.vue'
 
-import AvatarImage from '@/components/ui/avatar/AvatarImage.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Label from '@/components/ui/label/Label.vue'
+import AvatarImage from '@/Components/ui/avatar/AvatarImage.vue'
+import Button from '@/Components/ui/button/Button.vue'
+import Input from '@/Components/ui/input/Input.vue'
+import Label from '@/Components/ui/label/Label.vue'
 
 const props = defineProps({
   team: Object,
@@ -25,7 +25,7 @@ function updateTeamName() {
   form.put(route('teams.update', props.team), {
     errorBag: 'updateTeamName',
     preserveScroll: true,
-    onSuccess: () => toast.success('Team name updated successfully'),
+    onSuccess: () => toast.success('Nome da equipe atualizado com sucesso'),
   })
 }
 </script>
@@ -33,17 +33,17 @@ function updateTeamName() {
 <template>
   <FormSection @submitted="updateTeamName">
     <template #title>
-      Team Name
+      Nome da Equipe
     </template>
 
     <template #description>
-      The team's name and owner information.
+      O nome da equipe e informações do proprietário.
     </template>
 
     <template #form>
       <!-- Team Owner Information -->
       <div class="col-span-6">
-        <Label value="Team Owner" />
+        <Label value="Proprietário da Equipe" />
 
         <div class="mt-2 flex items-center">
           <Avatar>
@@ -69,7 +69,7 @@ function updateTeamName() {
 
       <!-- Team Name -->
       <div class="col-span-6 sm:col-span-4">
-        <Label for="name">Team Name</Label>
+        <Label for="name">Nome da Equipe</Label>
 
         <Input
           id="name"
@@ -88,7 +88,7 @@ function updateTeamName() {
         :class="{ 'opacity-25': form.processing }"
         :disabled="form.processing"
       >
-        Save
+        Salvar
       </Button>
     </template>
   </FormSection>

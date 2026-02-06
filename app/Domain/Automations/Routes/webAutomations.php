@@ -15,6 +15,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/automations/new', [AutomationController::class, 'selectEvent'])
             ->name('automations.new');
 
+        Route::get('/automations/http-request', [AutomationController::class, 'httpRequest'])
+            ->name('automations.http-request');
+
+        Route::post('/api/automations/http-request/test', [AutomationController::class, 'testHttpRequest'])
+            ->name('api.automations.http-request.test');
+
+        Route::post('/api/automations/workflow/test', [AutomationController::class, 'testWorkflow'])
+            ->name('api.automations.workflow.test');
+
         Route::get('/api/automation-trigger-types/{eventKey}', [AutomationTriggerTypeController::class, 'index'])
             ->name('api.automation-trigger-types.index');
 

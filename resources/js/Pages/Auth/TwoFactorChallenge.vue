@@ -17,7 +17,7 @@ import Label from '@/components/ui/label/Label.vue'
 import { useSeoMetaTags } from '@/composables/useSeoMetaTags.js'
 
 useSeoMetaTags({
-  title: 'Two-factor Confirmation',
+  title: 'Confirmação de Dois Fatores',
 })
 
 const route = inject('route')
@@ -59,27 +59,27 @@ function submit() {
           <AuthenticationCardLogo />
         </CardTitle>
         <CardDescription class="text-center text-2xl">
-          Two-factor authentication
+          Autenticação de dois fatores
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div class="mb-4 text-sm">
           <template v-if="!recovery">
-            Please confirm access to your account by entering the
-            authentication code provided by your authenticator
-            application.
+            Por favor, confirme o acesso à sua conta digitando o
+            código de autenticação fornecido pelo seu aplicativo
+            autenticador.
           </template>
 
           <template v-else>
-            Please confirm access to your account by entering one of
-            your emergency recovery codes.
+            Por favor, confirme o acesso à sua conta digitando um dos
+            seus códigos de recuperação de emergência.
           </template>
         </div>
 
         <form @submit.prevent="submit">
           <div v-if="!recovery">
-            <Label for="code">Code</Label>
+            <Label for="code">Código</Label>
             <Input
               id="code"
               ref="codeInput"
@@ -94,7 +94,7 @@ function submit() {
           </div>
 
           <div v-else>
-            <Label for="recovery_code">Recovery Code</Label>
+            <Label for="recovery_code">Código de Recuperação</Label>
             <Input
               id="recovery_code"
               ref="recoveryCodeInput"
@@ -116,11 +116,11 @@ function submit() {
               @click.prevent="toggleRecovery"
             >
               <template v-if="!recovery">
-                Use a recovery code
+                Usar um código de recuperação
               </template>
 
               <template v-else>
-                Use an authentication code
+                Usar um código de autenticação
               </template>
             </button>
 
@@ -129,7 +129,7 @@ function submit() {
               :class="{ 'opacity-25': form.processing }"
               :disabled="form.processing"
             >
-              Log in
+              Entrar
             </Button>
           </div>
         </form>

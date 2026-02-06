@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+        $middleware->alias([
+            'onboarding' => \App\Http\Middleware\EnsureOnboardingIsCompleted::class,
+        ]);
         $middleware->validateCsrfTokens(except: [
             'stripe/*',
             'prism/*',

@@ -1,7 +1,7 @@
 <script setup>
 import { Icon } from '@iconify/vue'
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/Components/ui/button'
 
 defineProps({
   provider: {

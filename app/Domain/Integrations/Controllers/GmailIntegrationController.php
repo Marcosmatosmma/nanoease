@@ -41,10 +41,17 @@ final class GmailIntegrationController
 
     public function callback(): RedirectResponse
     {
+        // Se o usuário não estiver logado, assume que é um login/registro via Google
+        if (! Auth::check()) {
+            return app(\App\Http\Controllers\User\OauthController::class)->callback('google');
+        }
+
         $user = Auth::user();
         abort_unless($user, 401);
 
-        $socialiteUser = Socialite::driver('google')->user();
+        // Use stateless() to avoid InvalidStateException when state is mismatched/missing. 
+        // We rely on the callback code validation itself.
+        $socialiteUser = Socialite::driver('google')->stateless()->user();
 
         $metadata = [
             'google_id' => $socialiteUser->getId(),

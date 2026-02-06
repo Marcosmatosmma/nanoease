@@ -8,6 +8,7 @@ use App\Domain\AI\Services\PrismClient;
 use App\Domain\AI\Prompts\Contracts\ContractAssistantPrompt;
 use App\Domain\Contracts\Models\Contract;
 use App\Domain\Contracts\Services\ContractHistoryService;
+use App\Domain\Contracts\Services\VectorSearchService;
 
 /**
  * Service para Assistente Jurídico IA
@@ -19,7 +20,8 @@ class ContractAssistantService
     public function __construct(
         private readonly PrismClient $prism,
         private readonly ContractAssistantPrompt $prompt,
-        private readonly ContractHistoryService $historyService
+        private readonly ContractHistoryService $historyService,
+        private readonly VectorSearchService $vectorSearch
     ) {}
 
     /**
@@ -32,26 +34,34 @@ class ContractAssistantService
      */
     public function ask(Contract $contract, string $question, ?int $userId = null): array
     {
-        // Validar se contrato tem documento com texto
-        $document = $contract->documents()->whereNotNull('extracted_text')->first();
-
-        if (!$document) {
-            throw new \RuntimeException('Contrato não possui documento com texto extraído');
+        // 1. Busca trechos relevantes com RAG
+        $chunks = $this->vectorSearch->search($contract, $question, 5);
+        
+        $contextText = '';
+        if (!empty($chunks)) {
+            $contextText = implode("\n\n---\n\n", array_column($chunks, 'content'));
+        } else {
+            // Fallback: se não tiver embeddings (ex: contrato antigo), tenta pegar do documento direto
+            $document = $contract->documents()->whereNotNull('extracted_text')->first();
+            if ($document) {
+                $contextText = mb_substr($document->extracted_text, 0, 15000);
+            }
         }
 
-        // Limitar tamanho do texto
-        $text = mb_substr($document->extracted_text, 0, 10000);
+        if (empty($contextText)) {
+            throw new \RuntimeException('Não foi possível encontrar texto no contrato.');
+        }
 
-        // Gerar prompt
+        // 2. Gerar prompt com contexto
         $promptText = $this->prompt->render([
-            'contract_text' => $text,
+            'contract_text' => $contextText,
             'question' => $question,
         ]);
 
-        // Chamar IA
+        // 3. Chamar IA
         $answer = $this->prism->ask($promptText);
 
-        // Registrar interação no histórico
+        // 4. Registrar interação no histórico
         $this->historyService->logAiInteraction($contract, $question, $userId);
 
         return [

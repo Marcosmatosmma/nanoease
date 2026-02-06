@@ -63,14 +63,15 @@ class StoreContractAction
             'invoice_recipient_address' => $data['invoice_recipient_address'] ?? null,
             'invoice_service_code' => $data['invoice_service_code'] ?? null,
             'invoice_due_day' => $data['invoice_due_day'] ?? null,
-            'invoice_cnpj_api_data' => isset($data['invoice_cnpj_api_data']) 
-                ? json_encode($data['invoice_cnpj_api_data']) 
-                : null,
+            'invoice_cnpj_api_data' => $data['invoice_cnpj_api_data'] ?? null,
         ]);
 
         // Salvar documento se fornecido
         if ($document) {
             $this->saveDocument($contract, $document, $userId, $teamId);
+            
+            // Gerar embeddings (RAG) em background para não travar o request
+            \App\Jobs\ProcessContractEmbeddingsJob::dispatch($contract);
         }
 
         // Registrar histórico
@@ -80,7 +81,7 @@ class StoreContractAction
     }
 
     /**
-     * Salva documento do contrato no storage
+     * Salva documento do contrato no storage e extrai texto
      */
     private function saveDocument(Contract $contract, UploadedFile $file, int $userId, int $teamId): void
     {
@@ -96,6 +97,9 @@ class StoreContractAction
             $uniqueName,
             'private'
         );
+        
+        // Extrair texto
+        $extractedText = $this->extractText($file);
 
         // Criar registro do documento
         ContractDocument::create([
@@ -107,6 +111,37 @@ class StoreContractAction
             'file_type' => strtolower($extension),
             'file_size' => $file->getSize(),
             'mime_type' => $file->getMimeType(),
+            'extracted_text' => $extractedText,
         ]);
+    }
+
+    private function extractText(UploadedFile $file): ?string
+    {
+        try {
+            $extension = strtolower($file->getClientOriginalExtension());
+            
+            if ($extension === 'pdf') {
+                $parser = new \Smalot\PdfParser\Parser();
+                $pdf = $parser->parseFile($file->getRealPath());
+                return $pdf->getText();
+            }
+            
+            if (in_array($extension, ['doc', 'docx'])) {
+                 $phpWord = \PhpOffice\PhpWord\IOFactory::load($file->getRealPath());
+                 $text = '';
+                 foreach ($phpWord->getSections() as $section) {
+                     foreach ($section->getElements() as $element) {
+                         if (method_exists($element, 'getText')) {
+                             $text .= $element->getText() . " ";
+                         }
+                     }
+                 }
+                 return trim($text);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Erro ao extrair texto no upload: ' . $e->getMessage());
+        }
+        
+        return null;
     }
 }

@@ -1,8 +1,8 @@
 <script setup>
 import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
-import InputError from '@/components/InputError.vue'
-import Button from '@/components/ui/button/Button.vue'
+import InputError from '@/Components/InputError.vue'
+import Button from '@/Components/ui/button/Button.vue'
 import {
   Dialog,
   DialogClose,
@@ -12,21 +12,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import Input from '@/components/ui/input/Input.vue'
+} from '@/Components/ui/dialog'
+import Input from '@/Components/ui/input/Input.vue'
 
 defineProps({
   title: {
     type: String,
-    default: 'Confirm Password',
+    default: 'Confirmar Senha',
   },
   content: {
     type: String,
-    default: 'For your security, please confirm your password to continue.',
+    default: 'Para sua segurança, por favor confirme sua senha para continuar.',
   },
   button: {
     type: String,
-    default: 'Confirm',
+    default: 'Confirmar',
   },
 })
 
@@ -87,7 +87,7 @@ function closeModal() {
             v-model="form.password"
             type="password"
             class="mt-1 block"
-            placeholder="Password"
+            placeholder="Senha"
             autocomplete="current-password"
             @keyup.enter="confirmPassword"
           />
@@ -98,7 +98,7 @@ function closeModal() {
         <DialogFooter class="mt-4">
           <DialogClose as-child>
             <Button variant="secondary" @click="closeModal">
-              Cancel
+              Cancelar
             </Button>
           </DialogClose>
 

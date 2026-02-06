@@ -112,12 +112,11 @@ function disableTwoFactorAuthentication() {
 <template>
   <ActionSection>
     <template #title>
-      Two Factor Authentication
+      Autenticação em Dois Fatores
     </template>
 
     <template #description>
-      Add additional security to your account using two factor
-      authentication.
+      Adicione segurança adicional à sua conta usando a autenticação em dois fatores.
     </template>
 
     <template #content>
@@ -125,26 +124,24 @@ function disableTwoFactorAuthentication() {
         v-if="twoFactorEnabled && !confirming"
         class="text-lg font-medium"
       >
-        You have enabled two factor authentication.
+        Você habilitou a autenticação em dois fatores.
       </h3>
 
       <h3
         v-else-if="twoFactorEnabled && confirming"
         class="text-lg font-medium"
       >
-        Finish enabling two factor authentication.
+        Finalize a ativação da autenticação em dois fatores.
       </h3>
 
       <h3 v-else class="text-lg font-medium">
-        You have not enabled two factor authentication.
+        Você não habilitou a autenticação em dois fatores.
       </h3>
 
       <div class="mt-3 max-w-xl text-sm">
         <p>
-          When two factor authentication is enabled, you will be
-          prompted for a secure, random token during authentication.
-          You may retrieve this token from your phone's Google
-          Authenticator application.
+          Quando a autenticação em dois fatores está ativada, será solicitado um token seguro e aleatório durante a autenticação.
+          Você pode obter esse token no aplicativo Google Authenticator do seu telefone.
         </p>
       </div>
 
@@ -152,16 +149,11 @@ function disableTwoFactorAuthentication() {
         <div v-if="qrCode">
           <div class="mt-4 max-w-xl text-sm">
             <p v-if="confirming" class="font-semibold">
-              To finish enabling two factor authentication, scan
-              the following QR code using your phone's
-              authenticator application or enter the setup key and
-              provide the generated OTP code.
+              Para finalizar a ativação da autenticação em dois fatores, escaneie o seguinte código QR usando o aplicativo autenticador do seu telefone ou insira a chave de configuração e forneça o código OTP gerado.
             </p>
 
             <p v-else>
-              Two factor authentication is now enabled. Scan the
-              following QR code using your phone's authenticator
-              application or enter the setup key.
+              A autenticação em dois fatores agora está ativada. Escaneie o seguinte código QR usando o aplicativo autenticador do seu telefone ou insira a chave de configuração.
             </p>
           </div>
 
@@ -169,12 +161,12 @@ function disableTwoFactorAuthentication() {
 
           <div v-if="setupKey" class="mt-4 max-w-xl text-sm">
             <p class="font-semibold">
-              Setup Key: <span v-html="setupKey" />
+              Chave de Configuração: <span v-html="setupKey" />
             </p>
           </div>
 
           <div v-if="confirming" class="mt-4">
-            <Label for="code">Code</Label>
+            <Label for="code">Código</Label>
 
             <Input
               id="code"
@@ -200,10 +192,8 @@ function disableTwoFactorAuthentication() {
             class="mt-4 max-w-xl text-sm text-gray-600 dark:text-gray-400"
           >
             <p class="font-semibold">
-              Store these recovery codes in a secure password
-              manager. They can be used to recover access to your
-              account if your two factor authentication device is
-              lost.
+              Armazene esses códigos de recuperação em um gerenciador de senhas seguro.
+              Eles podem ser usados para recuperar o acesso à sua conta se seu dispositivo de autenticação em dois fatores for perdido.
             </p>
           </div>
 
@@ -227,7 +217,7 @@ function disableTwoFactorAuthentication() {
               :class="{ 'opacity-25': enabling }"
               :disabled="enabling"
             >
-              Enable
+              Habilitar
             </Button>
           </ConfirmsPassword>
         </div>
@@ -243,7 +233,7 @@ function disableTwoFactorAuthentication() {
               :class="{ 'opacity-25': enabling }"
               :disabled="enabling"
             >
-              Confirm
+              Confirmar
             </Button>
           </ConfirmsPassword>
 
@@ -253,7 +243,7 @@ function disableTwoFactorAuthentication() {
               variant="secondary"
               class="me-3"
             >
-              Regenerate Recovery Codes
+              Gerar Novos Códigos de Recuperação
             </Button>
           </ConfirmsPassword>
 
@@ -263,7 +253,7 @@ function disableTwoFactorAuthentication() {
               variant="secondary"
               class="me-3"
             >
-              Show Recovery Codes
+              Mostrar Códigos de Recuperação
             </Button>
           </ConfirmsPassword>
 
@@ -276,7 +266,7 @@ function disableTwoFactorAuthentication() {
               :class="{ 'opacity-25': disabling }"
               :disabled="disabling"
             >
-              Cancel
+              Cancelar
             </Button>
           </ConfirmsPassword>
 
@@ -289,7 +279,7 @@ function disableTwoFactorAuthentication() {
               :class="{ 'opacity-25': disabling }"
               :disabled="disabling"
             >
-              Disable
+              Desabilitar
             </Button>
           </ConfirmsPassword>
         </div>

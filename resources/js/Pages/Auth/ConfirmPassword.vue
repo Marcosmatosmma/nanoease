@@ -21,7 +21,7 @@ const form = useForm({
 })
 
 useSeoMetaTags({
-  title: 'Confirm Password',
+  title: 'Confirmar Senha',
 })
 
 const passwordInput = ref(null)
@@ -44,20 +44,20 @@ function submit() {
           <AuthenticationCardLogo />
         </CardTitle>
         <CardDescription class="text-center text-2xl">
-          Confirm your password
+          Confirme sua senha
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          This is a secure area of the application. Please confirm
-          your password before continuing.
+          Esta é uma área segura da aplicação. Por favor, confirme
+          sua senha antes de continuar.
         </div>
 
         <form @submit.prevent="submit">
           <div class="grid gap-4">
             <div class="grid gap-2">
-              <Label for="password">Password</Label>
+              <Label for="password">Senha</Label>
               <Input
                 id="password"
                 ref="passwordInput"
@@ -75,7 +75,7 @@ function submit() {
               :class="{ 'opacity-25': form.processing }"
               :disabled="form.processing"
             >
-              Confirm
+              Confirmar
             </Button>
           </div>
         </form>

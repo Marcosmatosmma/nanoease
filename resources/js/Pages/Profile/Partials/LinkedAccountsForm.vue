@@ -38,7 +38,7 @@ function toggleLink(provider) {
   loadingProvider.value = provider
   if (!props.activeProviders.includes(provider)) {
     toast.promise(new Promise(resolve => setTimeout(resolve, 1000)), {
-      loading: 'Redirecting to provider...',
+      loading: 'Redirecionando para o provedor...',
     })
     window.location.href = route('oauth.redirect', { provider })
     return
@@ -49,7 +49,7 @@ function toggleLink(provider) {
     preserveScroll: true,
     onBefore: () => {
       toast.promise(new Promise(resolve => setTimeout(resolve, 1000)), {
-        loading: 'Unlinking account...',
+        loading: 'Desconectando conta...',
       })
     },
     onSuccess: () => {
@@ -70,17 +70,16 @@ function toggleLink(provider) {
 <template>
   <ActionSection>
     <template #title>
-      Linked Accounts
+      Contas Conectadas
     </template>
 
     <template #description>
-      Manage your linked social accounts for easier login access.
+      Gerencie suas contas sociais conectadas para facilitar o login.
     </template>
 
     <template #content>
       <div class="max-w-xl text-sm">
-        Link your accounts to enable single sign-on and manage your
-        connected social profiles.
+        Conecte suas contas para habilitar o login único e gerenciar seus perfis sociais conectados.
       </div>
 
       <div>

@@ -579,10 +579,11 @@
 import { ref } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
+import Button from '@/Components/ui/button/Button.vue'
+import Input from '@/Components/ui/input/Input.vue'
+import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import { Icon } from '@iconify/vue'
+import axios from 'axios'
 
 const form = useForm({
   name: '',
@@ -673,20 +674,13 @@ const extractDataWithAI = async () => {
     const formData = new FormData()
     formData.append('document', uploadedFile.value)
 
-    const response = await fetch(route('contracts.extract-data'), {
-      method: 'POST',
-      body: formData,
+    const response = await axios.post(route('contracts.extract-data'), formData, {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-        'Accept': 'application/json',
-      },
+        'Content-Type': 'multipart/form-data'
+      }
     })
 
-    if (!response.ok) {
-      throw new Error('Erro ao processar documento')
-    }
-
-    const data = await response.json()
+    const data = response.data
 
     // Preencher novos campos primeiro
     if (data.my_role_suggestion) form.my_role = data.my_role_suggestion

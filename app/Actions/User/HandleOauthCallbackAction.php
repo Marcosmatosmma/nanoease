@@ -94,10 +94,12 @@ final readonly class HandleOauthCallbackAction
 
     private function createNewUser(SocialiteUser $socialiteUser, string $provider): User
     {
+        $name = $socialiteUser->getName() ?? $socialiteUser->getNickname() ?? $socialiteUser->getEmail();
+
         $user = (new CreateNewUser())->create([
-            'name' => (string) $socialiteUser->getName(),
+            'name' => (string) $name,
             'email' => (string) $socialiteUser->getEmail(),
-            'terms' => (string) true,
+            'terms' => 'on',
         ]);
 
         $this->updateUserProfile($user, $socialiteUser, $provider);

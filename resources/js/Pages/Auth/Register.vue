@@ -1,24 +1,29 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
-import { inject } from 'vue'
-import InputError from '@/components/InputError.vue'
-import AuthenticationCardLogo from '@/components/LogoRedirect.vue'
+import { inject, computed } from 'vue'
+import InputError from '@/Components/InputError.vue'
+import AuthenticationCardLogo from '@/Components/LogoRedirect.vue'
+import SocialLoginButton from '@/Components/SocialLoginButton.vue'
 
-import Button from '@/components/ui/button/Button.vue'
+import Button from '@/Components/ui/button/Button.vue'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Label from '@/components/ui/label/Label.vue'
+} from '@/Components/ui/card'
+import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
+import Input from '@/Components/ui/input/Input.vue'
+import Label from '@/Components/ui/label/Label.vue'
 import { useSeoMetaTags } from '@/composables/useSeoMetaTags.js'
 
 useSeoMetaTags({
-  title: 'Register',
+  title: 'Cadastrar-se',
+})
+
+const props = defineProps({
+  availableOauthProviders: Object,
 })
 
 const route = inject('route')
@@ -29,6 +34,10 @@ const form = useForm({
   password_confirmation: '',
   terms: false,
 })
+
+const hasOauthProviders = computed(
+  () => Object.keys(props.availableOauthProviders || {}).length > 0,
+)
 
 function submit() {
   form.post(route('register'), {
@@ -45,15 +54,37 @@ function submit() {
           <AuthenticationCardLogo />
         </CardTitle>
         <CardDescription class="text-center text-2xl">
-          Create your account
+          Crie sua conta
         </CardDescription>
       </CardHeader>
 
       <CardContent>
+        <div v-if="hasOauthProviders" class="mb-6">
+          <div class="grid gap-2">
+            <SocialLoginButton
+              v-for="provider in availableOauthProviders"
+              :key="provider.slug"
+              :provider="provider"
+              :disabled="form.processing"
+            />
+          </div>
+          <div class="relative mt-6">
+            <div class="absolute inset-0 flex items-center">
+              <span class="w-full border-t" />
+            </div>
+            <div class="relative flex justify-center text-xs uppercase">
+              <span class="bg-background px-2 text-muted-foreground">
+                Ou cadastre-se com email
+              </span>
+            </div>
+          </div>
+        </div>
+
         <form @submit.prevent="submit">
           <div class="grid gap-4">
+            <!-- Name -->
             <div class="grid gap-2">
-              <Label for="name">Name</Label>
+              <Label for="name">Nome</Label>
               <Input
                 id="name"
                 v-model="form.name"
@@ -65,6 +96,7 @@ function submit() {
               <InputError :message="form.errors.name" />
             </div>
 
+            <!-- Email -->
             <div class="grid gap-2">
               <Label for="email">Email</Label>
               <Input
@@ -77,8 +109,9 @@ function submit() {
               <InputError :message="form.errors.email" />
             </div>
 
+            <!-- Password -->
             <div class="grid gap-2">
-              <Label for="password">Password</Label>
+              <Label for="password">Senha</Label>
               <Input
                 id="password"
                 v-model="form.password"
@@ -89,8 +122,9 @@ function submit() {
               <InputError :message="form.errors.password" />
             </div>
 
+            <!-- Confirm Password -->
             <div class="grid gap-2">
-              <Label for="password_confirmation">Confirm Password</Label>
+              <Label for="password_confirmation">Confirmar Senha</Label>
               <Input
                 id="password_confirmation"
                 v-model="form.password_confirmation"
@@ -103,6 +137,7 @@ function submit() {
               />
             </div>
 
+            <!-- Terms -->
             <div
               v-if="
                 $page.props.jetstream
@@ -120,18 +155,18 @@ function submit() {
                   for="terms"
                   class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  I agree to the
+                  Eu concordo com os
                   <a
                     target="_blank"
                     :href="route('terms.show')"
                     class="rounded-md text-sm underline"
-                  >Terms of Service</a>
-                  and
+                  >Termos de Serviço</a>
+                  e
                   <a
                     target="_blank"
                     :href="route('policy.show')"
                     class="rounded-md text-sm underline"
-                  >Privacy Policy</a>
+                  >Política de Privacidade</a>
                 </label>
               </div>
               <InputError :message="form.errors.terms" />
@@ -142,14 +177,14 @@ function submit() {
                 :href="route('login')"
                 class="text-sm underline"
               >
-                Already registered?
+                Já tem uma conta?
               </Link>
 
               <Button
                 :class="{ 'opacity-25': form.processing }"
                 :disabled="form.processing"
               >
-                Register
+                Cadastrar
               </Button>
             </div>
           </div>

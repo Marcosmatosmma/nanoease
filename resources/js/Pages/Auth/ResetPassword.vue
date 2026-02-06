@@ -25,7 +25,7 @@ const props = defineProps({
 })
 
 useSeoMetaTags({
-  title: 'Register',
+  title: 'Redefinir Senha',
 })
 
 const route = inject('route')
@@ -51,7 +51,7 @@ function submit() {
           <AuthenticationCardLogo />
         </CardTitle>
         <CardDescription class="text-center text-2xl">
-          Set your new password
+          Defina sua nova senha
         </CardDescription>
       </CardHeader>
 
@@ -72,7 +72,7 @@ function submit() {
           </div>
 
           <div class="mt-4">
-            <Label for="password">Password</Label>
+            <Label for="password">Nova Senha</Label>
             <Input
               id="password"
               v-model="form.password"
@@ -88,7 +88,7 @@ function submit() {
           </div>
 
           <div class="mt-4">
-            <Label for="password_confirmation">Confirm Password</Label>
+            <Label for="password_confirmation">Confirmar Nova Senha</Label>
             <Input
               id="password_confirmation"
               v-model="form.password_confirmation"
@@ -108,7 +108,7 @@ function submit() {
               :class="{ 'opacity-25': form.processing }"
               :disabled="form.processing"
             >
-              Reset Password
+              Redefinir Senha
             </Button>
           </div>
         </form>

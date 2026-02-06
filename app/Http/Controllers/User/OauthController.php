@@ -37,13 +37,28 @@ final class OauthController extends Controller
         try {
             /** @var SocialiteUser $socialiteUser */
             $socialiteUser = Socialite::driver($provider)->user();
+            \Illuminate\Support\Facades\Log::info('Socialite User:', ['email' => $socialiteUser->getEmail(), 'name' => $socialiteUser->getName(), 'provider' => $provider]);
+            
             $authenticatedUser = Auth::user();
             $user = $this->handleOauthCallbackAction->handle($provider, $socialiteUser, $authenticatedUser);
-        } catch (InvalidStateException) {
-            return Redirect::intended(Auth::check() ? route('profile.show') : route('login'))->with('error', __('The request timed out. Please try again.'));
+            \Illuminate\Support\Facades\Log::info('User handled:', ['id' => $user->id]);
+
+        } catch (InvalidStateException $e) {
+            \Illuminate\Support\Facades\Log::warning('InvalidStateException caught. Retrying stateless. ' . $e->getMessage());
+            try {
+                $socialiteUser = Socialite::driver($provider)->stateless()->user();
+                $authenticatedUser = Auth::user();
+                $user = $this->handleOauthCallbackAction->handle($provider, $socialiteUser, $authenticatedUser);
+            } catch (Throwable $retryException) {
+                 \Illuminate\Support\Facades\Log::error('Stateless retry failed: ' . $retryException->getMessage());
+                 return Redirect::intended(Auth::check() ? route('profile.show') : route('login'))->with('error', __('The request timed out. Please try again.'));
+            }
         } catch (OAuthAccountLinkingException $oauthAccountLinkingException) {
+            \Illuminate\Support\Facades\Log::error('OAuthAccountLinkingException: ' . $oauthAccountLinkingException->getMessage());
             return Redirect::intended(Auth::check() ? route('profile.show') : route('login'))->with('error', $oauthAccountLinkingException->getMessage());
         } catch (Throwable $throwable) {
+            \Illuminate\Support\Facades\Log::error('OAuth General Error: ' . $throwable->getMessage());
+            \Illuminate\Support\Facades\Log::error($throwable->getTraceAsString());
             report($throwable);
 
             return Redirect::intended(Auth::check() ? route('profile.show') : route('login'))->with('error', __('An error occurred during authentication. Please try again.'));

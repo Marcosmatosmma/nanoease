@@ -17,7 +17,7 @@ const props = defineProps({
 })
 
 useSeoMetaTags({
-  title: 'Email Verification',
+  title: 'Verificação de Email',
 })
 
 const route = inject('route')
@@ -41,23 +41,23 @@ const verificationLinkSent = computed(
           <AuthenticationCardLogo />
         </CardTitle>
         <CardDescription class="text-center text-2xl">
-          Verify your email
+          Verifique seu email
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Before continuing, could you verify your email address by
-          clicking on the link we just emailed to you? If you didn't
-          receive the email, we will gladly send you another.
+          Antes de continuar, você poderia verificar seu endereço de email
+          clicando no link que acabamos de enviar para você? Se você não
+          recebeu o email, teremos prazer em enviar outro.
         </div>
 
         <div
           v-if="verificationLinkSent"
           class="mb-4 text-sm font-medium text-green-600 dark:text-green-400"
         >
-          A new verification link has been sent to the email address
-          you provided in your profile settings.
+          Um novo link de verificação foi enviado para o endereço de email
+          que você forneceu nas configurações do seu perfil.
         </div>
 
         <form @submit.prevent="submit">
@@ -66,7 +66,7 @@ const verificationLinkSent = computed(
               :class="{ 'opacity-25': form.processing }"
               :disabled="form.processing"
             >
-              Resend Verification Email
+              Reenviar Email de Verificação
             </Button>
 
             <div>
@@ -74,7 +74,7 @@ const verificationLinkSent = computed(
                 :href="route('profile.show')"
                 class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:text-gray-400 dark:hover:text-gray-100 dark:focus:ring-offset-gray-800"
               >
-                Edit Profile
+                Editar Perfil
               </Link>
 
               <Link
@@ -83,7 +83,7 @@ const verificationLinkSent = computed(
                 as="button"
                 class="ms-2 rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:text-gray-400 dark:hover:text-gray-100 dark:focus:ring-offset-gray-800"
               >
-                Log Out
+                Sair
               </Link>
             </div>
           </div>
